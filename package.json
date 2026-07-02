@@ -1,0 +1,42 @@
+{
+  "name": "spp-al-hikmah",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "test": "node helper/test.js"
+  },
+  "build": {
+    "appId": "com.spp.alhikmah",
+    "productName": "SPP Al-Hikmah",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "src/assets/images/Logo_Aplikasi.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1",
+    "xlsx": "^0.18.5"
+  }
+}

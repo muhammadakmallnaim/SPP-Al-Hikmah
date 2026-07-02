@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Pengaturan Akun - SPP Al-Hikmah</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f5f7fa; overflow-x: hidden; }
+        .sidebar { background: #40916c; min-height: 100vh; color: #fff; padding-top: 20px; }
+        .sidebar h5 { font-weight: 700; letter-spacing: 1px; }
+        .sidebar a { color: #adb5bd; text-decoration: none; padding: 12px 25px; display: block; transition: all 0.3s; font-weight: 500; }
+        .sidebar a:hover, .sidebar a.active { color: #fff; background: #2d6a4f; border-left: 4px solid #f4a261; }
+        .card { border-radius: 12px; }
+        .input-group-text { cursor: pointer; background: white; border-left: none; }
+        .password-field { border-right: none; }
+    
+        /* Override Theme */
+        :root {
+            --bs-primary: #f4a261;
+        }
+        .btn-primary { background-color: #f4a261 !important; border-color: #f4a261 !important; color: #fff !important; }
+        .btn-primary:hover { background-color: #e76f51 !important; border-color: #e76f51 !important; }
+        .btn-outline-primary { color: #f4a261 !important; border-color: #f4a261 !important; }
+        .btn-outline-primary:hover { background-color: #f4a261 !important; color: #fff !important; }
+        .text-primary { color: #f4a261 !important; }
+        .bg-primary { background-color: #f4a261 !important; }
+    
+        /* Sidebar Enhancements */
+        .sidebar a { color: rgba(255,255,255,0.85) !important; font-weight: 500; }
+        .sidebar a i { color: rgba(255,255,255,0.85) !important; }
+        .sidebar a:hover, .sidebar a.active { color: #fff !important; font-weight: 600; }
+        .sidebar a:hover i, .sidebar a.active i { color: #fff !important; }
+        .sidebar .border-secondary { border-color: rgba(255,255,255,0.3) !important; }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar" style="width: 260px; flex-shrink: 0;">
+            <div class="text-center mb-4 pb-2 border-bottom border-secondary mx-3">
+                <img src="../assets/images/Logo_Aplikasi.jpeg" alt="Logo" style="width: 50px; height: 50px; background: white; border-radius: 50%; padding: 3px; margin-bottom: 10px;">
+                <h5 class="fw-bold m-0">SPP Al-Hikmah</h5>
+            </div>
+            <a href="dashboard.html"><i class="fas fa-home fa-fw me-2"></i>Dashboard</a>
+            <a href="data-siswa.html"><i class="fas fa-users fa-fw me-2"></i>Data Siswa</a>
+            <a href="data-kelas.html"><i class="fas fa-chalkboard-teacher fa-fw me-2"></i>Data Kelas</a>
+            <a href="tahun-ajaran.html"><i class="fas fa-calendar-alt fa-fw me-2"></i>Tahun Ajaran</a>
+            <a href="pengaturan-spp.html"><i class="fas fa-cog fa-fw me-2"></i>Pengaturan SPP</a>
+            <a href="pembayaran.html"><i class="fas fa-money-bill-wave fa-fw me-2"></i>Pembayaran</a>
+            <a href="laporan.html"><i class="fas fa-chart-line fa-fw me-2"></i>Laporan</a>
+            <div class="mt-5 border-top border-secondary mx-3 pt-3">
+                <a href="pengaturan-akun.html" class="active"><i class="fas fa-user-cog fa-fw me-2"></i>Pengaturan Akun</a>
+                <a href="#" id="btnLogout" class="text-danger"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="p-4 flex-grow-1">
+            <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+                <h3 class="m-0 font-weight-bold">Pengaturan Akun</h3>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; align-items: start;">
+                <div style="min-width: 0;">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body p-4">
+                            <h5 class="card-title fw-bold mb-4">Edit Profil & Keamanan</h5>
+                            
+                            <div class="alert alert-danger d-none" id="alertError"></div>
+                            <div class="alert alert-success d-none" id="alertSuccess"></div>
+
+                            <form id="formAkun">
+                                <div class="mb-3">
+                                    <label class="form-label">Nama Lengkap</label>
+                                    <input type="text" class="form-control" id="inputNama" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Role</label>
+                                    <input type="text" class="form-control bg-light" id="inputRole" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="inputUsername" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Password Baru (Opsional)</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control password-field" id="inputPassword" placeholder="Kosongkan jika tidak ingin mengubah password">
+                                        <span class="input-group-text" id="togglePassword">
+                                            <i class="fas fa-eye"></i>
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">Isi hanya jika Anda ingin mengubah password Anda.</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="btnSimpan"><i class="fas fa-save me-1"></i> Simpan Perubahan</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="min-width: 0;">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body p-4">
+                            <h5 class="card-title fw-bold mb-4">Log Aktivitas Sistem</h5>
+                            <p class="text-muted">Semua tindakan dalam aplikasi dicatat otomatis untuk keperluan audit.</p>
+                            
+                            <div class="d-flex gap-2 mb-4">
+                                <button class="btn btn-success" id="btnOpenLog"><i class="fas fa-file-excel me-1"></i> Buka File Excel</button>
+                                <button class="btn btn-outline-danger" id="btnHapusLog"><i class="fas fa-trash-alt me-1"></i> Kosongkan Log</button>
+                            </div>
+                            
+                            <h6 class="fw-bold mb-3">100 Log Terakhir</h6>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Waktu</th>
+                                            <th>Tindakan</th>
+                                            <th>Detail</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableLogBody">
+                                        <!-- logs will be injected here -->
+                                        <tr><td colspan="3" class="text-center text-muted">Memuat log...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../controllers/pengaturan-akun.js"></script>
+    <script src="../controllers/toast.js"></script>
+</body>
+</html>

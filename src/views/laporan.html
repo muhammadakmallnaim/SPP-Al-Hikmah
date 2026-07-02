@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan Pembayaran SPP - SPP Al-Hikmah</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f5f7fa; overflow-x: hidden; }
+        .sidebar { background: #40916c; min-height: 100vh; color: #fff; padding-top: 20px; }
+        .sidebar h5 { font-weight: 700; letter-spacing: 1px; }
+        .sidebar a { color: #adb5bd; text-decoration: none; padding: 12px 25px; display: block; transition: all 0.3s; font-weight: 500; }
+        .sidebar a:hover, .sidebar a.active { color: #fff; background: #2d6a4f; border-left: 4px solid #f4a261; }
+        .card { border-radius: 12px; }
+        @media print {
+            .sidebar, .navbar, .btn, .no-print { display: none !important; }
+            body { background: white; margin: 0; padding: 0; }
+            .card { box-shadow: none !important; border: none !important; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 20px; }
+            .print-header h2 { margin: 0; }
+            .table-responsive { overflow: visible !important; }
+        }
+        .print-header { display: none; }
+    
+        /* Override Theme */
+        :root {
+            --bs-primary: #f4a261;
+        }
+        .btn-primary { background-color: #f4a261 !important; border-color: #f4a261 !important; color: #fff !important; }
+        .btn-primary:hover { background-color: #e76f51 !important; border-color: #e76f51 !important; }
+        .btn-outline-primary { color: #f4a261 !important; border-color: #f4a261 !important; }
+        .btn-outline-primary:hover { background-color: #f4a261 !important; color: #fff !important; }
+        .text-primary { color: #f4a261 !important; }
+        .bg-primary { background-color: #f4a261 !important; }
+    
+        /* Sidebar Enhancements */
+        .sidebar a { color: rgba(255,255,255,0.85) !important; font-weight: 500; }
+        .sidebar a i { color: rgba(255,255,255,0.85) !important; }
+        .sidebar a:hover, .sidebar a.active { color: #fff !important; font-weight: 600; }
+        .sidebar a:hover i, .sidebar a.active i { color: #fff !important; }
+        .sidebar .border-secondary { border-color: rgba(255,255,255,0.3) !important; }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar" style="width: 260px; flex-shrink: 0;">
+            <div class="text-center mb-4 pb-2 border-bottom border-secondary mx-3">
+                <img src="../assets/images/Logo_Aplikasi.jpeg" alt="Logo" style="width: 50px; height: 50px; background: white; border-radius: 50%; padding: 3px; margin-bottom: 10px;" onerror="this.src='https://via.placeholder.com/50'">
+                <h5 class="fw-bold m-0">SPP Al-Hikmah</h5>
+            </div>
+            <a href="dashboard.html"><i class="fas fa-home fa-fw me-2"></i>Dashboard</a>
+            <a href="data-siswa.html"><i class="fas fa-users fa-fw me-2"></i>Data Siswa</a>
+            <a href="data-kelas.html"><i class="fas fa-chalkboard-teacher fa-fw me-2"></i>Data Kelas</a>
+            <a href="tahun-ajaran.html"><i class="fas fa-calendar-alt fa-fw me-2"></i>Tahun Ajaran</a>
+            <a href="pengaturan-spp.html"><i class="fas fa-cog fa-fw me-2"></i>Pengaturan SPP</a>
+            <a href="pembayaran.html"><i class="fas fa-money-bill-wave fa-fw me-2"></i>Pembayaran</a>
+            <a href="laporan.html" class="active"><i class="fas fa-chart-line fa-fw me-2"></i>Laporan</a>
+            <div class="mt-5 border-top border-secondary mx-3 pt-3">
+                <a href="pengaturan-akun.html"><i class="fas fa-user-cog fa-fw me-2"></i>Pengaturan Akun</a>
+                <a href="#" id="btnLogout" class="text-danger"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="p-4 flex-grow-1" style="height: 100vh; overflow-y: auto;">
+            
+            <div class="print-header">
+                <h2>YAYASAN PENDIDIKAN AL-HIKMAH</h2>
+                <h4>Laporan Penerimaan SPP</h4>
+                <p id="printSubtitle">Semua Data</p>
+                <hr style="border: 1px solid black;">
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm no-print">
+                <h3 class="m-0 font-weight-bold">Laporan Penerimaan SPP</h3>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success" id="btnExportExcel"><i class="fas fa-file-excel me-1"></i> Excel</button>
+                    <button class="btn btn-danger" id="btnExportPDF"><i class="fas fa-file-pdf me-1"></i> PDF</button>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm border-0 mb-4 no-print">
+                <div class="card-body">
+                    <form id="formFilter" class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Tahun Ajaran</label>
+                            <select class="form-select" id="filterTA">
+                                <option value="">Semua Tahun</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Kelas</label>
+                            <select class="form-select" id="filterKelas">
+                                <option value="">Semua Kelas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Bulan Tagihan</label>
+                            <select class="form-select" id="filterBulan">
+                                <option value="">Semua Bulan</option>
+                                <option value="Juli">Juli</option>
+                                <option value="Agustus">Agustus</option>
+                                <option value="September">September</option>
+                                <option value="Oktober">Oktober</option>
+                                <option value="November">November</option>
+                                <option value="Desember">Desember</option>
+                                <option value="Januari">Januari</option>
+                                <option value="Februari">Februari</option>
+                                <option value="Maret">Maret</option>
+                                <option value="April">April</option>
+                                <option value="Mei">Mei</option>
+                                <option value="Juni">Juni</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> Filter</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover table-bordered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="py-3 px-3">No Transaksi</th>
+                                <th class="py-3 px-3">Tanggal Bayar</th>
+                                <th class="py-3 px-3">NIS</th>
+                                <th class="py-3 px-3">Nama Siswa</th>
+                                <th class="py-3 px-3">Kelas</th>
+                                <th class="py-3 px-3">Bulan Tagihan</th>
+                                <th class="py-3 px-3 text-end">Nominal (Rp)</th>
+                                <th class="py-3 px-3">Petugas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyLaporan">
+                            <tr><td colspan="8" class="text-center py-4">Memuat data...</td></tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-info fw-bold">
+                                <td colspan="6" class="text-end py-3 px-3">TOTAL PENERIMAAN</td>
+                                <td class="text-end py-3 px-3" id="labelTotal">Rp 0</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="../controllers/laporan.js"></script>
+    <script src="../controllers/toast.js"></script>
+</body>
+</html>
