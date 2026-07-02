@@ -54,7 +54,7 @@ module.exports = function registerPembayaranHandlers() {
                 SELECT p.id as pengaturan_id, p.nominal_spp, t.id as tahun_ajaran_id, t.nama_tahun_ajaran 
                 FROM pengaturan_spp p
                 JOIN tahun_ajaran t ON p.tahun_ajaran_id = t.id
-                WHERE p.kelas_id = ? AND t.status_aktif = 1
+                WHERE p.kelas_id = ? AND t.status_aktif = true
                 LIMIT 1
             `, [siswa.kelas_id]);
 

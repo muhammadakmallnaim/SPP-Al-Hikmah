@@ -18,9 +18,9 @@ module.exports = function registerTahunAjaranHandlers() {
         try {
             const db = await getDB();
             if (status_aktif) {
-                await db.run('UPDATE tahun_ajaran SET status_aktif = 0'); // Nonaktifkan yg lain
+                await db.run('UPDATE tahun_ajaran SET status_aktif = false'); // Nonaktifkan yg lain
             }
-            await db.run('INSERT INTO tahun_ajaran (nama_tahun_ajaran, semester, status_aktif) VALUES (?, ?, ?)', [nama_tahun_ajaran, semester, status_aktif ? 1 : 0]);
+            await db.run('INSERT INTO tahun_ajaran (nama_tahun_ajaran, semester, status_aktif) VALUES (?, ?, ?)', [nama_tahun_ajaran, semester, status_aktif ? true : false]);
             writeLog('Tahun Ajaran', 'Tambah', 'Sukses', 'Berhasil menambahkan tahun ajaran');
             return { success: true, message: 'Tahun ajaran berhasil ditambahkan' };
         } catch (error) {
@@ -33,9 +33,9 @@ module.exports = function registerTahunAjaranHandlers() {
         try {
             const db = await getDB();
             if (status_aktif) {
-                await db.run('UPDATE tahun_ajaran SET status_aktif = 0');
+                await db.run('UPDATE tahun_ajaran SET status_aktif = false');
             }
-            await db.run('UPDATE tahun_ajaran SET nama_tahun_ajaran = ?, semester = ?, status_aktif = ? WHERE id = ?', [nama_tahun_ajaran, semester, status_aktif ? 1 : 0, id]);
+            await db.run('UPDATE tahun_ajaran SET nama_tahun_ajaran = ?, semester = ?, status_aktif = ? WHERE id = ?', [nama_tahun_ajaran, semester, status_aktif ? true : false, id]);
             writeLog('Tahun Ajaran', 'Edit', 'Sukses', 'Berhasil memperbarui tahun ajaran');
             return { success: true, message: 'Tahun ajaran diperbarui' };
         } catch (error) {
@@ -64,8 +64,8 @@ module.exports = function registerTahunAjaranHandlers() {
     ipcMain.handle('set-aktif-tahun-ajaran', async (event, id) => {
         try {
             const db = await getDB();
-            await db.run('UPDATE tahun_ajaran SET status_aktif = 0');
-            await db.run('UPDATE tahun_ajaran SET status_aktif = 1 WHERE id = ?', [id]);
+            await db.run('UPDATE tahun_ajaran SET status_aktif = false');
+            await db.run('UPDATE tahun_ajaran SET status_aktif = true WHERE id = ?', [id]);
             writeLog('Tahun Ajaran', 'Aktivasi', 'Sukses', 'Berhasil mengaktifkan tahun ajaran');
             return { success: true, message: 'Tahun ajaran diaktifkan' };
         } catch (error) {

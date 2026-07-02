@@ -1,51 +1,53 @@
 -- Tabel users
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    nama_lengkap TEXT NOT NULL,
-    role TEXT CHECK(role IN ('admin', 'bendahara')) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    nama_lengkap VARCHAR(255) NOT NULL,
+    role VARCHAR(50) CHECK(role IN ('admin', 'bendahara')) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabel tahun_ajaran
 CREATE TABLE IF NOT EXISTS tahun_ajaran (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nama_tahun_ajaran TEXT NOT NULL,
-    semester TEXT CHECK(semester IN ('Ganjil', 'Genap')) NOT NULL,
-    status_aktif BOOLEAN NOT NULL DEFAULT 0
+    id SERIAL PRIMARY KEY,
+    nama_tahun_ajaran VARCHAR(255) NOT NULL,
+    semester VARCHAR(50) CHECK(semester IN ('Ganjil', 'Genap')) NOT NULL,
+    status_aktif BOOLEAN NOT NULL DEFAULT false
 );
 
 -- Tabel kelas
 CREATE TABLE IF NOT EXISTS kelas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nama_kelas TEXT NOT NULL,
+    id SERIAL PRIMARY KEY,
+    nama_kelas VARCHAR(255) NOT NULL,
     tingkat INTEGER NOT NULL,
-    wali_kelas TEXT
+    wali_kelas VARCHAR(255)
 );
 
 -- Tabel siswa
 CREATE TABLE IF NOT EXISTS siswa (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nis TEXT UNIQUE NOT NULL,
-    nisn TEXT,
-    nama_siswa TEXT NOT NULL,
-    jenis_kelamin TEXT CHECK(jenis_kelamin IN ('L', 'P')) NOT NULL,
-    tempat_lahir TEXT,
+    id SERIAL PRIMARY KEY,
+    nis VARCHAR(100) UNIQUE NOT NULL,
+    nisn VARCHAR(100),
+    nama_siswa VARCHAR(255) NOT NULL,
+    jenis_kelamin VARCHAR(10) CHECK(jenis_kelamin IN ('L', 'P')) NOT NULL,
+    tempat_lahir VARCHAR(255),
     tanggal_lahir DATE,
     alamat TEXT,
-    nama_orang_tua TEXT,
-    no_hp_orang_tua TEXT,
+    nama_orang_tua VARCHAR(255),
+    no_hp_orang_tua VARCHAR(50),
     kelas_id INTEGER,
     tahun_masuk INTEGER,
-    status TEXT CHECK(status IN ('aktif', 'lulus', 'pindah', 'keluar')) NOT NULL,
+    status VARCHAR(50) CHECK(status IN ('aktif', 'lulus', 'pindah', 'keluar')) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (kelas_id) REFERENCES kelas(id)
 );
 
 -- Tabel pengaturan_spp
 CREATE TABLE IF NOT EXISTS pengaturan_spp (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     kelas_id INTEGER NOT NULL,
     tahun_ajaran_id INTEGER NOT NULL,
     nominal_spp REAL NOT NULL,
@@ -54,16 +56,16 @@ CREATE TABLE IF NOT EXISTS pengaturan_spp (
     FOREIGN KEY (tahun_ajaran_id) REFERENCES tahun_ajaran(id)
 );
 
--- Tabel pembayaran_spp (Simplified model)
+-- Tabel pembayaran_spp
 CREATE TABLE IF NOT EXISTS pembayaran_spp (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    no_transaksi TEXT UNIQUE NOT NULL,
+    id SERIAL PRIMARY KEY,
+    no_transaksi VARCHAR(100) UNIQUE NOT NULL,
     siswa_id INTEGER NOT NULL,
     tahun_ajaran_id INTEGER NOT NULL,
-    bulan_dibayar TEXT NOT NULL,
-    tanggal_pembayaran DATETIME DEFAULT CURRENT_TIMESTAMP,
+    bulan_dibayar VARCHAR(50) NOT NULL,
+    tanggal_pembayaran TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     nominal_dibayar REAL NOT NULL,
-    status_pembayaran TEXT DEFAULT 'Lunas',
+    status_pembayaran VARCHAR(50) DEFAULT 'Lunas',
     kasir_id INTEGER NOT NULL,
     FOREIGN KEY (siswa_id) REFERENCES siswa(id),
     FOREIGN KEY (tahun_ajaran_id) REFERENCES tahun_ajaran(id),

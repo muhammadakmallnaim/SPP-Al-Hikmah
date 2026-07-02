@@ -15,7 +15,7 @@ module.exports = function registerDashboardHandlers() {
             const totalKelas = rowKelas.count;
             
             // Tahun Ajaran Aktif
-            const rowTA = await db.get('SELECT nama_tahun_ajaran, semester FROM tahun_ajaran WHERE status_aktif = 1');
+            const rowTA = await db.get('SELECT nama_tahun_ajaran, semester FROM tahun_ajaran WHERE status_aktif = true');
             const tahunAjaran = rowTA ? `${rowTA.nama_tahun_ajaran} (${rowTA.semester})` : '-';
             
             // Penerimaan Bulan Ini (dummy logic if not enough data)
