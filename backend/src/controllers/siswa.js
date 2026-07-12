@@ -84,6 +84,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const id = parseInt(e.currentTarget.getAttribute('data-id'));
                 const s = allSiswa.find(x => x.id === id);
                 if (s) {
+                    const pwdDisplay = s.password ? (s.is_password_changed ? '******** (Sudah diganti)' : s.password) : 'Belum di-generate';
+                    const userDisplay = s.username || '-';
+
                     document.getElementById('detailTableBody').innerHTML = `
                         <tr><th>NIS / NISN</th><td>${s.nis} / ${s.nisn || '-'}</td></tr>
                         <tr><th>Nama Lengkap</th><td>${s.nama_siswa}</td></tr>
@@ -92,6 +95,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <tr><th>Alamat</th><td>${s.alamat || '-'}</td></tr>
                         <tr><th>Orang Tua / HP</th><td>${s.nama_orang_tua || '-'} / ${s.no_hp_orang_tua || '-'}</td></tr>
                         <tr><th>Tahun Masuk / Status</th><td>${s.tahun_masuk} / ${s.status}</td></tr>
+                        <tr class="table-info"><th>Username</th><td><strong>${userDisplay}</strong></td></tr>
+                        <tr class="table-info"><th>Password</th><td><strong>${pwdDisplay}</strong></td></tr>
+                        ${s.password ? `<tr><td colspan="2"><button class="btn btn-sm btn-danger w-100" onclick="window.downloadKartuSiswa(${s.id})"><i class="fas fa-file-pdf"></i> Simpan Kartu PDF (Per Siswa)</button></td></tr>` : ''}
                     `;
                     modalDetail.show();
                 }
@@ -216,6 +222,175 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     fetchKelas();
     loadData();
+
+    // --- MANAJEMEN AKUN (GENERATE & CETAK) ---
+    const modalGenerateAkun = new bootstrap.Modal(document.getElementById('modalGenerateAkun'));
+    
+    document.getElementById('btnGenerateAkun').addEventListener('click', () => {
+        // Populate select kelas
+        let selectKelas = document.getElementById('generatePilihKelas');
+        let cetakKelas = document.getElementById('cetakPilihKelas');
+        selectKelas.innerHTML = '<option value="">Pilih Kelas</option>';
+        cetakKelas.innerHTML = '<option value="all" selected>Seluruh Kelas</option>';
+        allKelas.forEach(k => {
+            selectKelas.innerHTML += `<option value="${k.id}">${k.nama_kelas}</option>`;
+            cetakKelas.innerHTML += `<option value="${k.id}">${k.nama_kelas}</option>`;
+        });
+
+        // Populate select siswa for Tom Select
+        let selectSiswa = document.getElementById('generatePilihSiswa');
+        selectSiswa.innerHTML = '<option value="">Cari dan Pilih Siswa...</option>';
+        allSiswa.forEach(s => {
+            selectSiswa.innerHTML += `<option value="${s.id}">${s.nama_siswa} (${s.nis})</option>`;
+        });
+        
+        // Inisialisasi Tom Select jika belum
+        if (!window.tomSelectInstance) {
+            window.tomSelectInstance = new TomSelect("#generatePilihSiswa",{
+                create: false,
+                sortField: { field: "text", direction: "asc" }
+            });
+        } else {
+            window.tomSelectInstance.clear();
+            window.tomSelectInstance.clearOptions();
+            window.tomSelectInstance.sync();
+        }
+
+        // Reset state
+        document.getElementById('generateMode').value = 'semua';
+        document.getElementById('divPilihKelas').classList.add('d-none');
+        document.getElementById('divPilihSiswa').classList.add('d-none');
+        document.getElementById('generateForce').checked = false;
+
+        modalGenerateAkun.show();
+    });
+
+    document.getElementById('generateMode').addEventListener('change', (e) => {
+        if(e.target.value === 'kelas') {
+            document.getElementById('divPilihKelas').classList.remove('d-none');
+            document.getElementById('divPilihSiswa').classList.add('d-none');
+        } else if (e.target.value === 'siswa') {
+            document.getElementById('divPilihKelas').classList.add('d-none');
+            document.getElementById('divPilihSiswa').classList.remove('d-none');
+        } else {
+            // Mode semua kelas, hide both
+            document.getElementById('divPilihKelas').classList.add('d-none');
+            document.getElementById('divPilihSiswa').classList.add('d-none');
+        }
+    });
+
+    document.getElementById('btnProsesGenerate').addEventListener('click', async () => {
+        const mode = document.getElementById('generateMode').value;
+        const force = document.getElementById('generateForce').checked;
+        let target_id = null;
+
+        if (mode === 'kelas') {
+            target_id = document.getElementById('generatePilihKelas').value;
+            if(!target_id) return showToast('Pilih kelas terlebih dahulu!', 'warning');
+        } else if (mode === 'siswa') {
+            target_id = document.getElementById('generatePilihSiswa').value;
+            if(!target_id) return showToast('Pilih siswa terlebih dahulu!', 'warning');
+        } else if (mode === 'semua') {
+            target_id = 'all'; // Special marker for backend
+        }
+
+        const btn = document.getElementById('btnProsesGenerate');
+        btn.disabled = true;
+        btn.textContent = "Proses...";
+
+        try {
+            const parsedTarget = target_id === 'all' ? 'all' : parseInt(target_id);
+            const res = await window.api.generateAkun({ mode, target_id: parsedTarget, force });
+            if (res.success) {
+                showToast(res.message, 'success');
+                modalGenerateAkun.hide();
+                loadData(); // refresh data 
+            } else {
+                showToast(res.message, 'danger');
+            }
+        } catch (e) {
+            showToast('Terjadi kesalahan saat generate akun', 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Mulai Generate Password";
+        }
+    });
+
+    const generateKartuPDF = async (siswaArray, filename) => {
+        if(siswaArray.length === 0) return showToast('Tidak ada data siswa untuk dicetak', 'warning');
+        
+        showToast('Sedang membuat PDF, mohon tunggu...', 'info');
+        
+        let htmlContent = `
+            <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff;">
+                <h2 style="text-align: center; margin-bottom: 20px;">Kartu Login Siswa</h2>
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
+        `;
+        
+        siswaArray.forEach(s => {
+            const username = s.username || s.nisn || s.nis;
+            const pwd = s.password ? (s.is_password_changed ? '******** (Sudah diganti)' : s.password) : 'Belum di-generate';
+            htmlContent += `
+                <div style="width: 320px; border: 2px solid #2d6a4f; border-radius: 8px; padding: 15px; background: #f8fdfa; text-align: center; box-sizing: border-box; page-break-inside: avoid; margin-bottom: 10px;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #2d6a4f; border-bottom: 2px dashed #ccc; padding-bottom: 5px;">Portal SPP Al-Hikmah</h3>
+                    <div style="font-weight: bold; font-size: 16px; margin: 10px 0;">${s.nama_siswa}</div>
+                    <div style="font-size: 13px; color: #555;">NIS: ${s.nis}</div>
+                    <div style="text-align: left; font-size: 14px; margin-top: 10px; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <div><span style="display: inline-block; width: 85px; font-weight: bold;">Username</span>: ${username}</div>
+                        <div><span style="display: inline-block; width: 85px; font-weight: bold;">Password</span>: <strong>${pwd}</strong></div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 11px; color: #666;">Simpan kartu ini dan jangan beritahukan password Anda kepada orang lain.</div>
+                </div>
+            `;
+        });
+        htmlContent += `</div></div>`;
+
+        const opt = {
+            margin:       0.5,
+            filename:     filename,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        try {
+            await html2pdf().set(opt).from(htmlContent).save();
+            showToast('PDF berhasil diunduh!', 'success');
+        } catch (e) {
+            showToast('Gagal membuat PDF', 'danger');
+        }
+    };
+
+    // Export function ke global window agar bisa di-click dari Detail Siswa HTML
+    window.downloadKartuSiswa = (siswa_id) => {
+        const target = allSiswa.filter(s => s.id == siswa_id);
+        if(target.length > 0) {
+            const filename = `Kartu_Login_${target[0].nama_siswa.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+            generateKartuPDF(target, filename);
+        }
+    };
+
+    document.getElementById('btnProsesCetak').addEventListener('click', async () => {
+        const kelas_id = document.getElementById('cetakPilihKelas').value;
+        if(!kelas_id) return showToast('Pilih kelas yang mau dicetak', 'warning');
+        
+        const btn = document.getElementById('btnProsesCetak');
+        btn.disabled = true;
+        btn.textContent = "Proses...";
+        
+        if (kelas_id === 'all') {
+            const target = allSiswa.filter(s => s.status === 'aktif');
+            await generateKartuPDF(target, 'Kartu_Login_Seluruh_Siswa_Aktif.pdf');
+        } else {
+            const target = allSiswa.filter(s => s.kelas_id == kelas_id && s.status === 'aktif');
+            const kelasTarget = document.querySelector(`#cetakPilihKelas option[value="${kelas_id}"]`).textContent;
+            await generateKartuPDF(target, `Kartu_Login_Kelas_${kelasTarget.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+        }
+        
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-print me-2"></i> Cetak Kartu Kelas`;
+        modalGenerateAkun.hide();
+    });
 
     document.getElementById('btnLogout').addEventListener('click', (e) => {
         e.preventDefault();

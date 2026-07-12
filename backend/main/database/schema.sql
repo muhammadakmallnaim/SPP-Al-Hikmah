@@ -28,21 +28,24 @@ CREATE TABLE IF NOT EXISTS kelas (
 -- Tabel siswa
 CREATE TABLE IF NOT EXISTS siswa (
     id SERIAL PRIMARY KEY,
-    nis VARCHAR(100) UNIQUE NOT NULL,
-    nisn VARCHAR(100),
+    nis VARCHAR(50) UNIQUE NOT NULL,
+    nisn VARCHAR(50) UNIQUE NOT NULL,
     nama_siswa VARCHAR(255) NOT NULL,
     jenis_kelamin VARCHAR(10) CHECK(jenis_kelamin IN ('L', 'P')) NOT NULL,
-    tempat_lahir VARCHAR(255),
+    tempat_lahir VARCHAR(100),
     tanggal_lahir DATE,
     alamat TEXT,
-    nama_orang_tua VARCHAR(255),
-    no_hp_orang_tua VARCHAR(50),
-    kelas_id INTEGER,
-    tahun_masuk INTEGER,
+    nama_ayah VARCHAR(255),
+    nama_ibu VARCHAR(255),
+    no_telp_ortu VARCHAR(20),
+    kelas_id INTEGER REFERENCES kelas(id),
+    status_aktif BOOLEAN DEFAULT true,
+    username VARCHAR(255) UNIQUE,
+    password VARCHAR(255),
+    is_password_changed BOOLEAN DEFAULT false,
     status VARCHAR(50) CHECK(status IN ('aktif', 'lulus', 'pindah', 'keluar')) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (kelas_id) REFERENCES kelas(id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabel pengaturan_spp

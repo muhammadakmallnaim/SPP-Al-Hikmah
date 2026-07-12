@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('api', {
     updateSiswa: (data) => ipcRenderer.invoke('update-siswa', data),
     deleteSiswa: (id) => ipcRenderer.invoke('delete-siswa', id),
     importSiswa: (filePath) => ipcRenderer.invoke('import-siswa', filePath),
+    generateAkun: (data) => ipcRenderer.invoke('generate-akun', data),
 
     // --- Modul Kelas ---
     getKelas: () => ipcRenderer.invoke('get-kelas'),

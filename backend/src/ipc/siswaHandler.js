@@ -23,17 +23,17 @@ module.exports = function registerSiswaHandlers() {
     ipcMain.handle('add-siswa', async (event, data) => {
         try {
             const db = await getDB();
-            const { nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status } = data;
+            let { nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status } = data;
             
-            // Cek NIS unik
-            const cekNis = await db.get('SELECT id FROM siswa WHERE nis = ?', [nis]);
+            tanggal_lahir = tanggal_lahir || null;
+            kelas_id = kelas_id || null;
+
+            const cekNis = await db.get('SELECT id FROM siswa WHERE nis = $1', [nis]);
             if (cekNis) return { success: false, message: 'NIS sudah terdaftar' };
 
-            await db.run(`INSERT INTO siswa (nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+            await db.run(`INSERT INTO siswa (nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`, 
                           [nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status]);
             writeLog('Data Siswa', 'Tambah', 'Sukses', `Menambahkan siswa baru: ${nama_siswa} (NIS: ${nis})`);
-            writeLog('Data Siswa', 'Tambah', 'Sukses', 'Berhasil menambahkan siswa baru');
             return { success: true, message: 'Siswa berhasil ditambahkan' };
         } catch (error) {
             console.error(error);
@@ -45,12 +45,15 @@ module.exports = function registerSiswaHandlers() {
     ipcMain.handle('update-siswa', async (event, data) => {
         try {
             const db = await getDB();
-            const { id, nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status } = data;
+            let { id, nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status } = data;
             
-            const cekNis = await db.get('SELECT id FROM siswa WHERE nis = ? AND id != ?', [nis, id]);
+            tanggal_lahir = tanggal_lahir || null;
+            kelas_id = kelas_id || null;
+
+            const cekNis = await db.get('SELECT id FROM siswa WHERE nis = $1 AND id != $2', [nis, id]);
             if (cekNis) return { success: false, message: 'NIS sudah terdaftar untuk siswa lain' };
 
-            await db.run(`UPDATE siswa SET nis=?, nisn=?, nama_siswa=?, jenis_kelamin=?, tempat_lahir=?, tanggal_lahir=?, alamat=?, nama_orang_tua=?, no_hp_orang_tua=?, kelas_id=?, tahun_masuk=?, status=? WHERE id=?`, 
+            await db.run(`UPDATE siswa SET nis=$1, nisn=$2, nama_siswa=$3, jenis_kelamin=$4, tempat_lahir=$5, tanggal_lahir=$6, alamat=$7, nama_orang_tua=$8, no_hp_orang_tua=$9, kelas_id=$10, tahun_masuk=$11, status=$12 WHERE id=$13`, 
                           [nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status, id]);
             writeLog('Data Siswa', 'Edit', 'Sukses', `Mengubah data siswa: ${nama_siswa} (NIS: ${nis})`);
             return { success: true, message: 'Data siswa berhasil diperbarui' };
@@ -165,7 +168,53 @@ module.exports = function registerSiswaHandlers() {
         } catch (error) {
             console.error(error);
             writeLog('Data Siswa', 'Import Excel', 'Gagal', `File gagal diproses: ${error.message}`);
-            return { success: false, message: 'Error Import: ' + error.message };
         }
     });
+
+    ipcMain.handle('generate-akun', async (event, data) => {
+        try {
+            const db = await getDB();
+            const { mode, target_id, force } = data; // mode: 'single' (target_id = siswa.id) atau 'kelas' (target_id = kelas_id)
+            
+            const generatePassword = () => Math.random().toString(36).slice(-8).toUpperCase();
+            
+            let querySiswa = [];
+            if (mode === 'single' || mode === 'siswa') {
+                querySiswa = await db.all('SELECT * FROM siswa WHERE id = ?', [target_id]);
+            } else if (mode === 'kelas') {
+                querySiswa = await db.all('SELECT * FROM siswa WHERE kelas_id = ? AND status = ?', [target_id, 'aktif']);
+            } else if (mode === 'semua') {
+                querySiswa = await db.all('SELECT * FROM siswa WHERE status = ?', ['aktif']);
+            }
+
+            let countGenerated = 0;
+            let countSkipped = 0;
+
+            for (const s of querySiswa) {
+                // Jangan override jika tidak force dan password sudah ada
+                if (!force && s.username && s.password) {
+                    countSkipped++;
+                    continue;
+                }
+
+                // Jangan reset kalau user sudah ganti password sendiri (kecuali beneran dipaksa lewat force)
+                if (s.is_password_changed && !force) {
+                    countSkipped++;
+                    continue;
+                }
+
+                const username = s.nisn || s.nis; // default NISN, fallback NIS
+                const newPassword = generatePassword();
+                
+                await db.run('UPDATE siswa SET username = ?, password = ?, is_password_changed = false WHERE id = ?', [username, newPassword, s.id]);
+                countGenerated++;
+            }
+
+            return { success: true, message: `Berhasil generate ${countGenerated} akun. Diabaikan (sudah punya akun): ${countSkipped} akun.` };
+        } catch (error) {
+            console.error(error);
+            return { success: false, message: 'Gagal generate akun' };
+        }
+    });
+
 };

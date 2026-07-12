@@ -260,15 +260,22 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.text(`Kelas`, 12, 56);
         doc.text(`: ${currentSiswa.nama_kelas}`, 45, 56);
         
+        const isOnline = noTransaksi.startsWith('TRX');
+        const petugas = isOnline ? 'Sistem' : user.nama_lengkap;
+        const caraBayar = isOnline ? 'Online (Midtrans)' : 'Langsung';
+
         doc.text(`Untuk Pembayaran`, 12, 64);
         doc.text(`: SPP Bulan ${bulan}`, 45, 64);
 
+        doc.text(`Cara Bayar`, 12, 72);
+        doc.text(`: ${caraBayar}`, 45, 72);
+
         // Total
         doc.setFillColor(240, 240, 240);
-        doc.rect(12, 72, 80, 15, 'F');
-        doc.setFontSize(14);
+        doc.rect(12, 76, 80, 12, 'F');
+        doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
-        doc.text(`TOTAL : Rp ${nominal.toLocaleString('id-ID')}`, 15, 82);
+        doc.text(`TOTAL : Rp ${nominal.toLocaleString('id-ID')}`, 15, 84);
 
         // Kolom Kanan (Tanda Tangan)
         const tglStr = new Date().toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'});
@@ -278,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.text(`Petugas / Kasir`, 150, 54);
         
         doc.setFont("helvetica", "bold");
-        doc.text(`( ${user.nama_lengkap} )`, 150, 80);
+        doc.text(`( ${petugas} )`, 150, 80);
 
         doc.setFontSize(8);
         doc.setFont("helvetica", "italic");
