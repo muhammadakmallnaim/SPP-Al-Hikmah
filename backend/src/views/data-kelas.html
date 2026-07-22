@@ -17,7 +17,6 @@
         .sidebar a:hover, .sidebar a.active { color: #fff; background: #2d6a4f; border-left: 4px solid #f4a261; }
         .card { border-radius: 12px; }
         .table th { background-color: #f8f9fa; }
-    
         /* Override Theme */
         :root {
             --bs-primary: #f4a261;
@@ -28,7 +27,6 @@
         .btn-outline-primary:hover { background-color: #f4a261 !important; color: #fff !important; }
         .text-primary { color: #f4a261 !important; }
         .bg-primary { background-color: #f4a261 !important; }
-    
         /* Sidebar Enhancements */
         .sidebar a { color: rgba(255,255,255,0.85) !important; font-weight: 500; }
         .sidebar a i { color: rgba(255,255,255,0.85) !important; }
@@ -51,13 +49,14 @@
             <a href="tahun-ajaran.html"><i class="fas fa-calendar-alt fa-fw me-2"></i>Tahun Ajaran</a>
             <a href="pengaturan-spp.html"><i class="fas fa-cog fa-fw me-2"></i>Pengaturan SPP</a>
             <a href="pembayaran.html"><i class="fas fa-money-bill-wave fa-fw me-2"></i>Pembayaran</a>
+            <a href="tunggakan.html"><i class="fas fa-exclamation-triangle fa-fw me-2"></i>Tunggakan</a>
             <a href="laporan.html"><i class="fas fa-chart-line fa-fw me-2"></i>Laporan</a>
             <div class="mt-5 border-top border-secondary mx-3 pt-3">
+                <a href="data-user.html"><i class="fas fa-users-cog fa-fw me-2"></i>Data User</a>
                 <a href="pengaturan-akun.html"><i class="fas fa-user-cog fa-fw me-2"></i>Pengaturan Akun</a>
                 <a href="#" id="btnLogout" class="text-danger"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a>
             </div>
         </div>
-        
         <!-- Main Content Area -->
         <div class="p-4 flex-grow-1" style="height: 100vh; overflow-y: auto;">
             <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
@@ -70,7 +69,6 @@
                     <button class="btn btn-primary text-nowrap" id="btnTambahKelas"><i class="fas fa-plus me-1"></i> Tambah Kelas</button>
                 </div>
             </div>
-            
             <div class="card shadow-sm border-0">
                 <div class="card-body p-0">
                     <table class="table table-hover mb-0">
@@ -91,7 +89,6 @@
             </div>
         </div>
     </div>
-
     <!-- Modal Tambah Kelas -->
     <div class="modal fade" id="modalTambahKelas" tabindex="-1">
         <div class="modal-dialog">
@@ -125,7 +122,6 @@
             </div>
         </div>
     </div>
-
     <!-- Modal Edit Kelas -->
     <div class="modal fade" id="modalEditKelas" tabindex="-1">
         <div class="modal-dialog">
@@ -159,7 +155,6 @@
             </div>
         </div>
     </div>
-
     <!-- Bootstrap JS Bundle (termasuk Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Controller JS -->
@@ -174,5 +169,6 @@
         });
     </script>
     <script src="../controllers/toast.js"></script>
+    <script src="../controllers/auth.js"></script>
 </body>
 </html>

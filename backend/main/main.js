@@ -1,7 +1,6 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const { initDB } = require('./database/db');
-const { seedData } = require('./database/seed');
 
 // Import IPC Handlers
 const registerUserHandlers = require('../src/ipc/userHandler');
@@ -12,12 +11,12 @@ const registerPengaturanSPPHandlers = require('../src/ipc/pengaturanSPPHandler')
 const registerPembayaranHandlers = require('../src/ipc/pembayaranHandler');
 const registerLaporanHandlers = require('../src/ipc/laporanHandler');
 const registerDashboardHandlers = require('../src/ipc/dashboardHandler');
+const registerTunggakanHandlers = require('../src/ipc/tunggakanHandler');
+const registerDataUserHandlers = require('../src/ipc/dataUserHandler');
 const { registerLoggerHandlers } = require('./logger');
 
 // Inisialisasi Database saat aplikasi mulai
-initDB().then(() => {
-    return seedData();
-}).catch(console.error);
+initDB().catch(console.error);
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
@@ -51,6 +50,8 @@ app.whenReady().then(() => {
     registerPembayaranHandlers();
     registerLaporanHandlers();
     registerDashboardHandlers();
+    registerTunggakanHandlers();
+    registerDataUserHandlers();
     registerLoggerHandlers();
     
     createWindow();

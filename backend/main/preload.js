@@ -45,6 +45,16 @@ contextBridge.exposeInMainWorld('api', {
     // --- Modul Laporan ---
     getLaporan: (filter) => ipcRenderer.invoke('get-laporan', filter),
 
+    // --- Modul Tunggakan ---
+    getDataTunggakan: (payload) => ipcRenderer.invoke('get-data-tunggakan', payload),
+    exportPdfTunggakan: (filename) => ipcRenderer.invoke('export-pdf-tunggakan', filename),
+
+    // --- Modul Data User ---
+    getAllUsers: () => ipcRenderer.invoke('get-all-users'),
+    addUser: (data) => ipcRenderer.invoke('add-user', data),
+    updateUser: (data) => ipcRenderer.invoke('update-user', data),
+    deleteUser: (id) => ipcRenderer.invoke('delete-user', id),
+
     // --- Modul Logger ---
     getLogAktivitas: () => ipcRenderer.invoke('get-log-aktivitas'),
     hapusLogAktivitas: () => ipcRenderer.invoke('hapus-log-aktivitas'),

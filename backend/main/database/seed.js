@@ -19,10 +19,15 @@ async function seedData() {
         RESTART IDENTITY CASCADE;
     `);
 
-    // 1. Seed Users (Admin)
-    const hash = await bcrypt.hash('admin123', 10);
-    await db.run('INSERT INTO users (username, password, nama_lengkap, role) VALUES (?, ?, ?, ?)', ['admin', hash, 'Administrator', 'admin']);
+    // 1. Seed Users (Admin & Kepala Sekolah)
+    const hashAdmin = await bcrypt.hash('admin123', 10);
+    const hashKepsek = await bcrypt.hash('kepsek123', 10);
+    
+    await db.run('INSERT INTO users (username, password, nama_lengkap, role) VALUES (?, ?, ?, ?)', ['admin', hashAdmin, 'Administrator', 'admin']);
     console.log('User admin berhasil dibuat (username: admin, password: admin123).');
+    
+    await db.run('INSERT INTO users (username, password, nama_lengkap, role) VALUES (?, ?, ?, ?)', ['kepsek', hashKepsek, 'Bpk. Kepala Sekolah', 'kepala_sekolah']);
+    console.log('User kepala sekolah berhasil dibuat (username: kepsek, password: kepsek123).');
 
     // 2. Seed Tahun Ajaran
     await db.run('INSERT INTO tahun_ajaran (nama_tahun_ajaran, semester, status_aktif) VALUES (?, ?, ?)', ['2025/2026', 'Ganjil', 1]);

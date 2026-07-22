@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Tunggakan - SPP Al-Hikmah</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #f5f7fa; 
+            overflow-x: hidden;
+        }
+        .sidebar { 
+            background: #40916c; 
+            min-height: 100vh; 
+            color: #fff; 
+            padding-top: 20px;
+        }
+        .sidebar h5 { font-weight: 700; letter-spacing: 1px; }
+        .sidebar a { 
+            color: #adb5bd; 
+            text-decoration: none; 
+            padding: 12px 25px; 
+            display: block; 
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        .sidebar a:hover, .sidebar a.active { 
+            color: #fff; 
+            background: #2d6a4f; 
+            border-left: 4px solid #f4a261;
+        }
+        :root { --bs-primary: #f4a261; }
+        .btn-primary { background-color: #f4a261 !important; border-color: #f4a261 !important; color: #fff !important; }
+        .btn-primary:hover { background-color: #e76f51 !important; border-color: #e76f51 !important; }
+        .text-primary { color: #f4a261 !important; }
+        .bg-primary { background-color: #f4a261 !important; }
+        /* Sidebar Enhancements */
+        .sidebar a { color: rgba(255,255,255,0.85) !important; font-weight: 500; }
+        .sidebar a i { color: rgba(255,255,255,0.85) !important; }
+        .sidebar a:hover, .sidebar a.active { color: #fff !important; font-weight: 600; }
+        .sidebar a:hover i, .sidebar a.active i { color: #fff !important; }
+        .sidebar .border-secondary { border-color: rgba(255,255,255,0.3) !important; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .table thead th { background: #2b3a4a; color: #fff; font-weight: 600; }
+        .rincian-box {
+            background: #fdfdfd;
+            border-left: 3px solid #e76f51;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        /* Surat Print CSS */
+        @media print {
+            body { background: #fff !important; }
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0 !important; }
+            .modal { position: absolute; left: 0; top: 0; background: #fff !important; margin: 0; padding: 0; overflow: visible !important; }
+            .modal-backdrop { display: none !important; }
+            .modal-dialog, .modal-content { margin: 0 !important; border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; background: #fff !important; }
+            .modal-header, .modal-footer { display: none !important; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar" style="width: 260px;">
+            <div class="text-center mb-4 pb-2 border-bottom border-secondary mx-3">
+                <img src="../assets/images/Logo_Aplikasi.jpeg" alt="Logo" style="width: 50px; height: 50px; background: white; border-radius: 50%; padding: 3px; margin-bottom: 10px;">
+                <h5 class="fw-bold m-0">SPP Al-Hikmah</h5>
+            </div>
+            <a href="dashboard.html"><i class="fas fa-home fa-fw me-2"></i>Dashboard</a>
+            <a href="data-siswa.html"><i class="fas fa-users fa-fw me-2"></i>Data Siswa</a>
+            <a href="data-kelas.html"><i class="fas fa-chalkboard-teacher fa-fw me-2"></i>Data Kelas</a>
+            <a href="tahun-ajaran.html"><i class="fas fa-calendar-alt fa-fw me-2"></i>Tahun Ajaran</a>
+            <a href="pengaturan-spp.html"><i class="fas fa-cog fa-fw me-2"></i>Pengaturan SPP</a>
+            <a href="pembayaran.html"><i class="fas fa-money-bill-wave fa-fw me-2"></i>Pembayaran</a>
+            <a href="tunggakan.html" class="active"><i class="fas fa-exclamation-triangle fa-fw me-2"></i>Tunggakan</a>
+            <a href="laporan.html"><i class="fas fa-chart-line fa-fw me-2"></i>Laporan</a>
+            <div class="mt-5 border-top border-secondary mx-3 pt-3">
+                <a href="data-user.html"><i class="fas fa-users-cog fa-fw me-2"></i>Data User</a>
+                <a href="pengaturan-akun.html"><i class="fas fa-user-cog fa-fw me-2"></i>Pengaturan Akun</a>
+                <a href="#" id="btnLogout" class="text-danger"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a>
+            </div>
+        </div>
+        <!-- Main Content Area -->
+        <div class="p-4 flex-grow-1">
+            <h2 class="mb-4 fw-bold text-dark"><i class="fas fa-exclamation-triangle text-primary me-2"></i>Data Tunggakan SPP</h2>
+            <div class="card p-4">
+                <form id="formFilter" class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Filter Kelas</label>
+                        <select class="form-select" id="filterKelas">
+                            <option value="">Semua Kelas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">Cari Siswa</label>
+                        <input type="text" class="form-control" id="filterKeyword" placeholder="Cari NIS / Nama Siswa...">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-2"></i>Tampilkan</button>
+                    </div>
+                </form>
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle" id="tableTunggakan">
+                        <thead>
+                            <tr>
+                                <th>NIS</th>
+                                <th>Nama Siswa</th>
+                                <th>Kelas Aktif</th>
+                                <th>Total Tunggakan</th>
+                                <th class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr><td colspan="5" class="text-center">Memuat data tunggakan...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Rincian & Cetak Surat -->
+    <div class="modal fade" id="modalSuratTeguran" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-envelope-open-text me-2"></i>Rincian Tunggakan & Surat Teguran</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Area yang akan di print -->
+                    <div id="printArea" class="bg-white text-dark p-4">
+                        <div class="d-flex align-items-center border-bottom border-2 border-dark pb-3 mb-3">
+                            <img src="../assets/images/Logo_Aplikasi.jpeg" alt="Logo" style="width: 80px; height: 80px;">
+                            <div class="text-center w-100">
+                                <h4 class="fw-bold mb-1">YAYASAN PENDIDIKAN AL-HIKMAH</h4>
+                            </div>
+                        </div>
+                        <div class="text-center mb-4">
+                            <h5 class="fw-bold text-uppercase text-decoration-underline mb-0">Surat Pemberitahuan Tunggakan SPP Siswa</h5>
+                        </div>
+                        <p>Kepada Yth. Orang Tua/Wali Murid dari:</p>
+                        <table class="table table-sm table-borderless w-50 mb-4">
+                            <tr><td width="30%">Nama</td><td width="5%">:</td><td id="suratNama" class="fw-bold"></td></tr>
+                            <tr><td>NIS</td><td>:</td><td id="suratNis"></td></tr>
+                            <tr><td>Kelas</td><td>:</td><td id="suratKelas"></td></tr>
+                        </table>
+                        <p>Dengan hormat,</p>
+                        <p>Berdasarkan catatan administrasi keuangan sekolah, kami memberitahukan bahwa ananda memiliki tunggakan SPP yang belum diselesaikan. Berikut adalah rincian tagihan per semester (termasuk tunggakan semester lalu jika ada):</p>
+                        <div id="suratRincian" class="mb-4"></div>
+                        <div class="alert alert-warning border-0 p-3 mb-4 text-center text-dark">
+                            <h5 class="mb-0 fw-bold">Total Seluruh Tunggakan: <span id="suratTotal" class="text-danger"></span></h5>
+                        </div>
+                        <p>Mohon kerjasamanya untuk dapat segera melunasi tagihan tersebut. Atas perhatian dan kerjasama Bapak/Ibu, kami ucapkan terima kasih.</p>
+                        <div class="text-end mt-5">
+                            <p class="mb-5">Mengetahui,<br>Bagian Administrasi / Bendahara</p>
+                            <p class="fw-bold mb-0">_________________________</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary no-print" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-success no-print" id="btnCetakSurat"><i class="fas fa-file-pdf me-2"></i>Ekspor ke PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap & Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../controllers/tunggakan.js"></script>
+    <script src="../controllers/auth.js"></script>
+</body>
+</html>

@@ -15,7 +15,6 @@
         .card { border-radius: 12px; }
         .input-group-text { cursor: pointer; background: white; border-left: none; }
         .password-field { border-right: none; }
-    
         /* Override Theme */
         :root {
             --bs-primary: #f4a261;
@@ -26,7 +25,6 @@
         .btn-outline-primary:hover { background-color: #f4a261 !important; color: #fff !important; }
         .text-primary { color: #f4a261 !important; }
         .bg-primary { background-color: #f4a261 !important; }
-    
         /* Sidebar Enhancements */
         .sidebar a { color: rgba(255,255,255,0.85) !important; font-weight: 500; }
         .sidebar a i { color: rgba(255,255,255,0.85) !important; }
@@ -49,28 +47,26 @@
             <a href="tahun-ajaran.html"><i class="fas fa-calendar-alt fa-fw me-2"></i>Tahun Ajaran</a>
             <a href="pengaturan-spp.html"><i class="fas fa-cog fa-fw me-2"></i>Pengaturan SPP</a>
             <a href="pembayaran.html"><i class="fas fa-money-bill-wave fa-fw me-2"></i>Pembayaran</a>
+            <a href="tunggakan.html"><i class="fas fa-exclamation-triangle fa-fw me-2"></i>Tunggakan</a>
             <a href="laporan.html"><i class="fas fa-chart-line fa-fw me-2"></i>Laporan</a>
             <div class="mt-5 border-top border-secondary mx-3 pt-3">
+                <a href="data-user.html"><i class="fas fa-users-cog fa-fw me-2"></i>Data User</a>
                 <a href="pengaturan-akun.html" class="active"><i class="fas fa-user-cog fa-fw me-2"></i>Pengaturan Akun</a>
                 <a href="#" id="btnLogout" class="text-danger"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a>
             </div>
         </div>
-        
         <!-- Main Content Area -->
         <div class="p-4 flex-grow-1">
             <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
                 <h3 class="m-0 font-weight-bold">Pengaturan Akun</h3>
             </div>
-            
             <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; align-items: start;">
                 <div style="min-width: 0;">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-body p-4">
                             <h5 class="card-title fw-bold mb-4">Edit Profil & Keamanan</h5>
-                            
                             <div class="alert alert-danger d-none" id="alertError"></div>
                             <div class="alert alert-success d-none" id="alertSuccess"></div>
-
                             <form id="formAkun">
                                 <div class="mb-3">
                                     <label class="form-label">Nama Lengkap</label>
@@ -99,18 +95,15 @@
                         </div>
                     </div>
                 </div>
-                
                 <div style="min-width: 0;">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-body p-4">
                             <h5 class="card-title fw-bold mb-4">Log Aktivitas Sistem</h5>
                             <p class="text-muted">Semua tindakan dalam aplikasi dicatat otomatis untuk keperluan audit.</p>
-                            
                             <div class="d-flex gap-2 mb-4">
                                 <button class="btn btn-success" id="btnOpenLog"><i class="fas fa-file-excel me-1"></i> Buka File Excel</button>
                                 <button class="btn btn-outline-danger" id="btnHapusLog"><i class="fas fa-trash-alt me-1"></i> Kosongkan Log</button>
                             </div>
-                            
                             <h6 class="fw-bold mb-3">100 Log Terakhir</h6>
                             <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                                 <table class="table table-sm table-bordered">
@@ -131,12 +124,11 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../controllers/pengaturan-akun.js"></script>
     <script src="../controllers/toast.js"></script>
+    <script src="../controllers/auth.js"></script>
 </body>
 </html>

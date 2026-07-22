@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Manajemen User - SPP Al-Hikmah</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f5f7fa; overflow-x: hidden; }
+        .sidebar { background: #40916c; min-height: 100vh; color: #fff; padding-top: 20px; }
+        .sidebar h5 { font-weight: 700; letter-spacing: 1px; }
+        .sidebar a { color: rgba(255,255,255,0.85) !important; text-decoration: none; padding: 12px 25px; display: block; transition: all 0.3s; font-weight: 500; }
+        .sidebar a i { color: rgba(255,255,255,0.85) !important; }
+        .sidebar a:hover, .sidebar a.active { color: #fff !important; background: #2d6a4f; border-left: 4px solid #f4a261; font-weight: 600; }
+        .sidebar a:hover i, .sidebar a.active i { color: #fff !important; }
+        .sidebar .border-secondary { border-color: rgba(255,255,255,0.3) !important; }
+        :root { --bs-primary: #f4a261; }
+        .btn-primary { background-color: #f4a261 !important; border-color: #f4a261 !important; color: #fff !important; }
+        .btn-primary:hover { background-color: #e76f51 !important; border-color: #e76f51 !important; }
+        .text-primary { color: #f4a261 !important; }
+        .bg-primary { background-color: #f4a261 !important; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .table thead th { background: #2b3a4a; color: #fff; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar" style="width: 260px; flex-shrink: 0;">
+            <div class="text-center mb-4 pb-2 border-bottom border-secondary mx-3">
+                <img src="../assets/images/Logo_Aplikasi.jpeg" alt="Logo" style="width: 50px; height: 50px; background: white; border-radius: 50%; padding: 3px; margin-bottom: 10px;">
+                <h5 class="fw-bold m-0">SPP Al-Hikmah</h5>
+            </div>
+            <a href="dashboard.html"><i class="fas fa-home fa-fw me-2"></i>Dashboard</a>
+            <a href="data-siswa.html"><i class="fas fa-users fa-fw me-2"></i>Data Siswa</a>
+            <a href="data-kelas.html"><i class="fas fa-chalkboard-teacher fa-fw me-2"></i>Data Kelas</a>
+            <a href="tahun-ajaran.html"><i class="fas fa-calendar-alt fa-fw me-2"></i>Tahun Ajaran</a>
+            <a href="pengaturan-spp.html"><i class="fas fa-cog fa-fw me-2"></i>Pengaturan SPP</a>
+            <a href="pembayaran.html"><i class="fas fa-money-bill-wave fa-fw me-2"></i>Pembayaran</a>
+            <a href="tunggakan.html"><i class="fas fa-exclamation-triangle fa-fw me-2"></i>Tunggakan</a>
+            <a href="laporan.html"><i class="fas fa-chart-line fa-fw me-2"></i>Laporan</a>
+            <div class="mt-5 border-top border-secondary mx-3 pt-3">
+                <a href="data-user.html" class="active"><i class="fas fa-users-cog fa-fw me-2"></i>Data User</a>
+                <a href="pengaturan-akun.html"><i class="fas fa-user-cog fa-fw me-2"></i>Pengaturan Akun</a>
+                <a href="#" id="btnLogout" class="text-danger"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="p-4 flex-grow-1" style="height: 100vh; overflow-y: auto;">
+            <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+                <h3 class="m-0 font-weight-bold">Manajemen User</h3>
+                <button class="btn btn-primary" id="btnTambahUser"><i class="fas fa-plus me-1"></i> Tambah User</button>
+            </div>
+            
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-3 border-0">No</th>
+                                <th class="py-3 border-0">Nama Lengkap</th>
+                                <th class="py-3 border-0">Username</th>
+                                <th class="py-3 border-0">Role</th>
+                                <th class="px-4 py-3 border-0 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableUserBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Memuat data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form User -->
+    <div class="modal fade" id="modalUser" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title fw-bold" id="modalUserTitle">Tambah User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formUser">
+                    <div class="modal-body p-4">
+                        <div class="alert alert-danger d-none" id="alertError"></div>
+                        <input type="hidden" id="userId">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="inputNama" required placeholder="Contoh: Budi Santoso">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="inputUsername" required placeholder="Masukkan username login">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
+                            <select class="form-select" id="inputRole" required>
+                                <option value="admin">Admin</option>
+                                <option value="kepala_sekolah">Kepala Sekolah</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Password</label>
+                            <input type="password" class="form-control" id="inputPassword" placeholder="Kosong jika tidak ingin mengubah password">
+                            <small class="text-muted" id="passwordHelp">Wajib diisi untuk user baru.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary" id="btnSimpan"><i class="fas fa-save me-1"></i> Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../controllers/auth.js"></script>
+    <script src="../controllers/data-user.js"></script>
+</body>
+</html>

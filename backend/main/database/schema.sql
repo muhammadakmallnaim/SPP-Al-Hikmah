@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(255) UNIQUE NOT NULL,
     password TEXT NOT NULL,
     nama_lengkap VARCHAR(255) NOT NULL,
-    role VARCHAR(50) CHECK(role IN ('admin', 'bendahara')) NOT NULL,
+    role VARCHAR(50) CHECK(role IN ('admin', 'bendahara', 'kepala_sekolah')) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
