@@ -68,6 +68,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    function formatTanggal(dateInput, includeTime = true) {
+        if (!dateInput) return '-';
+        let tgl;
+        if (dateInput instanceof Date) {
+            tgl = dateInput;
+        } else {
+            let dtStr = String(dateInput);
+            if (!dtStr.includes('Z') && !dtStr.includes('+')) {
+                dtStr = dtStr.replace(' ', 'T');
+                if (!dtStr.includes('Z')) dtStr += 'Z';
+            }
+            tgl = new Date(dtStr);
+        }
+        
+        if (isNaN(tgl)) return '-';
+
+        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        if (includeTime) {
+            options.hour = '2-digit';
+            options.minute = '2-digit';
+            options.second = '2-digit';
+        }
+        return tgl.toLocaleString('id-ID', options).replace(/\./g, ':');
+    }
+
     function renderTable(data) {
         if (data.length === 0) {
             tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Belum ada transaksi</td></tr>`;
@@ -76,9 +101,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let html = '';
         data.forEach(item => {
-            // Format Tanggal
-            const tgl = new Date(item.tanggal_pembayaran);
-            const tglStr = `${tgl.getDate()}/${tgl.getMonth()+1}/${tgl.getFullYear()} ${tgl.getHours()}:${tgl.getMinutes()}`;
+            // Format Tanggal (memperbaiki bug UTC+7 dan menambah detik)
+            const tglStr = formatTanggal(item.tanggal_pembayaran, true);
 
             html += `
                 <tr>
@@ -107,7 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const exportData = currentLaporanData.map((item, index) => ({
             'No': index + 1,
             'No Transaksi': item.no_transaksi,
-            'Tanggal': new Date(item.tanggal_pembayaran).toLocaleString('id-ID'),
+            'Tanggal': formatTanggal(item.tanggal_pembayaran, true),
             'NIS': item.nis,
             'Nama Siswa': item.nama_siswa,
             'Kelas': item.nama_kelas,
@@ -159,7 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const dataRow = [
                 index + 1,
                 item.no_transaksi,
-                new Date(item.tanggal_pembayaran).toLocaleDateString('id-ID'),
+                formatTanggal(item.tanggal_pembayaran, true),
                 item.nis,
                 item.nama_siswa,
                 item.nama_kelas,

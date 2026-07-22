@@ -65,6 +65,7 @@
                         <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
                         <input type="text" class="form-control" id="inputSearch" placeholder="Cari NIS / Nama / Kelas...">
                     </div>
+                    <button class="btn btn-info text-white text-nowrap" id="btnKenaikanKelas"><i class="fas fa-level-up-alt me-1"></i> Naik Kelas</button>
                     <button class="btn btn-warning text-nowrap" id="btnGenerateAkun"><i class="fas fa-key me-1"></i> Generate Akun</button>
                     <button class="btn btn-success text-nowrap" id="btnImportModal"><i class="fas fa-file-excel me-1"></i> Import</button>
                     <button class="btn btn-primary text-nowrap" id="btnTambahSiswa"><i class="fas fa-plus me-1"></i> Tambah</button>
@@ -187,6 +188,55 @@
                             <!-- Detail diisi dari JS -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Kenaikan Kelas -->
+    <div class="modal fade" id="modalKenaikanKelas" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Proses Kenaikan Kelas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <label class="form-label">Dari Kelas (Asal)</label>
+                            <select class="form-select mb-3" id="kkKelasAsal">
+                                <option value="">-- Pilih Kelas Asal --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-arrow-right fs-3 text-muted"></i>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Ke Kelas (Tujuan)</label>
+                            <select class="form-select mb-3" id="kkKelasTujuan">
+                                <option value="">-- Pilih Kelas Tujuan --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-responsive mt-2" style="max-height: 300px;">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%"><input type="checkbox" id="kkCheckAll"></th>
+                                    <th>NIS</th>
+                                    <th>Nama Siswa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kkTableBody">
+                                <tr><td colspan="3" class="text-center text-muted">Pilih Kelas Asal terlebih dahulu</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnProsesKenaikan">Proses Kenaikan Kelas</button>
                 </div>
             </div>
         </div>

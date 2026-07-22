@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const isOnline = noTransaksi.startsWith('TRX');
         const petugas = isOnline ? 'Sistem' : user.nama_lengkap;
-        const caraBayar = isOnline ? 'Online (Midtrans)' : 'Langsung';
+        const caraBayar = isOnline ? 'Online' : 'Langsung';
 
         doc.text(`Untuk Pembayaran`, 12, 64);
         doc.text(`: SPP Bulan ${bulan}`, 45, 64);

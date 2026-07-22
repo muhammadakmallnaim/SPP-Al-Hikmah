@@ -13,7 +13,7 @@ export default function RootLayout({ children }) {
         <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}></script>
       </head>
       <body>
-        <main className="animate-fade-in">
+        <main>
           {children}
         </main>
       </body>

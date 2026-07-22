@@ -1,16 +1,29 @@
 const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') }); // Load dari root backend
 
 // Koneksi ke Supabase PostgreSQL via Shared Pooler (IPv4)
-const connectionString = 'postgresql://postgres.bisogcgwshtxtwdeghgg:SPP-Al-Hikmah@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true';
+const connectionString = process.env.DATABASE_URL;
 let pool;
 
 async function getDB() {
     if (!pool) {
+        if (!connectionString) {
+            console.error('ERROR: DATABASE_URL tidak ditemukan di .env!');
+        }
         pool = new Pool({
             connectionString,
-            ssl: { rejectUnauthorized: false }
+            ssl: { rejectUnauthorized: false },
+            max: 20, // Membatasi jumlah maksimal koneksi untuk mencegah kelebihan beban / memory leak
+            idleTimeoutMillis: 30000, // Koneksi yang tidak aktif selama 30 detik akan ditutup (mencegah memory leak)
+            connectionTimeoutMillis: 5000 // Waktu maksimal tunggu koneksi (kecepatan)
+        });
+        
+        // Error handling pada pool idle untuk mencegah aplikasi crash jika database terputus
+        pool.on('error', (err, client) => {
+            console.error('Unexpected error on idle database client', err);
+            // Aplikasi tidak perlu crash, pool akan reconnect otomatis saat dibutuhkan
         });
     }
     

@@ -392,6 +392,91 @@ document.addEventListener('DOMContentLoaded', async () => {
         modalGenerateAkun.hide();
     });
 
+    // --- MANAJEMEN KENAIKAN KELAS ---
+    const modalKenaikanKelas = new bootstrap.Modal(document.getElementById('modalKenaikanKelas'));
+    
+    document.getElementById('btnKenaikanKelas').addEventListener('click', () => {
+        let selectAsal = document.getElementById('kkKelasAsal');
+        let selectTujuan = document.getElementById('kkKelasTujuan');
+        selectAsal.innerHTML = '<option value="">-- Pilih Kelas Asal --</option>';
+        selectTujuan.innerHTML = '<option value="">-- Pilih Kelas Tujuan --</option>';
+        
+        allKelas.forEach(k => {
+            selectAsal.innerHTML += `<option value="${k.id}">${k.nama_kelas}</option>`;
+            selectTujuan.innerHTML += `<option value="${k.id}">${k.nama_kelas}</option>`;
+        });
+        
+        document.getElementById('kkTableBody').innerHTML = '<tr><td colspan="3" class="text-center text-muted">Pilih Kelas Asal terlebih dahulu</td></tr>';
+        document.getElementById('kkCheckAll').checked = false;
+        
+        modalKenaikanKelas.show();
+    });
+    
+    document.getElementById('kkKelasAsal').addEventListener('change', (e) => {
+        const kelasId = e.target.value;
+        const tbody = document.getElementById('kkTableBody');
+        if (!kelasId) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Pilih Kelas Asal terlebih dahulu</td></tr>';
+            return;
+        }
+        
+        const siswaKelas = allSiswa.filter(s => s.kelas_id == kelasId && s.status === 'aktif');
+        if (siswaKelas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Tidak ada siswa aktif di kelas ini</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        siswaKelas.forEach(s => {
+            html += `
+                <tr>
+                    <td><input type="checkbox" class="kk-checkbox" value="${s.id}"></td>
+                    <td>${s.nis}</td>
+                    <td>${s.nama_siswa}</td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+        document.getElementById('kkCheckAll').checked = false;
+    });
+    
+    document.getElementById('kkCheckAll').addEventListener('change', (e) => {
+        const checkboxes = document.querySelectorAll('.kk-checkbox');
+        checkboxes.forEach(cb => cb.checked = e.target.checked);
+    });
+    
+    document.getElementById('btnProsesKenaikan').addEventListener('click', async () => {
+        const checkboxes = document.querySelectorAll('.kk-checkbox:checked');
+        const siswa_ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        const target_kelas_id = document.getElementById('kkKelasTujuan').value;
+        
+        if (siswa_ids.length === 0) return showToast('Pilih minimal 1 siswa', 'warning');
+        if (!target_kelas_id) return showToast('Pilih Kelas Tujuan', 'warning');
+        if (document.getElementById('kkKelasAsal').value === target_kelas_id) return showToast('Kelas Tujuan tidak boleh sama dengan Kelas Asal', 'warning');
+        
+        if (!confirm(`Anda yakin akan menaikkan ${siswa_ids.length} siswa ke Kelas Tujuan?`)) return;
+        
+        const btn = document.getElementById('btnProsesKenaikan');
+        btn.disabled = true;
+        btn.textContent = 'Memproses...';
+        
+        try {
+            const res = await window.api.promoteSiswa({ siswa_ids, target_kelas_id: parseInt(target_kelas_id) });
+            if (res.success) {
+                showToast(res.message, 'success');
+                modalKenaikanKelas.hide();
+                loadData();
+            } else {
+                showToast(res.message, 'danger');
+            }
+        } catch (e) {
+            showToast('Terjadi kesalahan saat proses kenaikan kelas', 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Proses Kenaikan Kelas';
+        }
+    });
+
     document.getElementById('btnLogout').addEventListener('click', (e) => {
         e.preventDefault();
         window.api.tambahLog({modul: 'Otentikasi', tindakan: 'Logout', status: 'Sukses', detail: 'Admin logout dari sistem'});

@@ -74,3 +74,13 @@ CREATE TABLE IF NOT EXISTS pembayaran_spp (
     FOREIGN KEY (tahun_ajaran_id) REFERENCES tahun_ajaran(id),
     FOREIGN KEY (kasir_id) REFERENCES users(id)
 );
+
+-- Tabel riwayat_kelas
+CREATE TABLE IF NOT EXISTS riwayat_kelas (
+    id SERIAL PRIMARY KEY,
+    siswa_id INTEGER NOT NULL REFERENCES siswa(id),
+    kelas_id INTEGER NOT NULL REFERENCES kelas(id),
+    tahun_ajaran_id INTEGER NOT NULL REFERENCES tahun_ajaran(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(siswa_id, tahun_ajaran_id)
+);

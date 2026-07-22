@@ -16,6 +16,18 @@ export default function DashboardPage() {
 
   const router = useRouter();
 
+  const [tahunAjaranList, setTahunAjaranList] = useState([]);
+  const [selectedTaId, setSelectedTaId] = useState(null);
+
+  // Status Pembayaran & Notifikasi UI
+  const [processingId, setProcessingId] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 3000);
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       const session = localStorage.getItem('siswa_session');
@@ -25,14 +37,12 @@ export default function DashboardPage() {
       }
       const dataSiswa = JSON.parse(session);
 
-      // Validasi session dengan server (cek apakah password masih sama)
       const { data: dbSiswa, error } = await supabase
         .from('siswa')
         .select('password, is_password_changed')
         .eq('id', dataSiswa.id)
         .single();
 
-      // Jika password tidak cocok (mungkin direset admin / diganti di tempat lain)
       if (error || !dbSiswa || dbSiswa.password !== dataSiswa.password) {
         localStorage.removeItem('siswa_session');
         router.push('/');
@@ -41,9 +51,27 @@ export default function DashboardPage() {
 
       dataSiswa.is_password_changed = dbSiswa.is_password_changed;
       setSiswa(dataSiswa);
-      fetchTagihan(dataSiswa);
+      
+      // Ambil riwayat kelas siswa untuk dropdown
+      const { data: riwayat } = await supabase
+        .from('riwayat_kelas')
+        .select(`
+          tahun_ajaran_id,
+          kelas_id,
+          tahun_ajaran ( id, nama_tahun_ajaran, status_aktif )
+        `)
+        .eq('siswa_id', dataSiswa.id)
+        .order('tahun_ajaran_id', { ascending: false });
+        
+      if (riwayat && riwayat.length > 0) {
+        setTahunAjaranList(riwayat);
+        // Default ke tahun ajaran aktif, jika tidak ada (sudah lulus) ke tahun terakhir
+        const activeTa = riwayat.find(r => r.tahun_ajaran.status_aktif) || riwayat[0];
+        setSelectedTaId(activeTa.tahun_ajaran_id);
+      } else {
+        setLoading(false);
+      }
 
-      // Buka pop-up ganti password otomatis jika belum pernah ganti
       if (!dbSiswa.is_password_changed) {
         setShowPasswordModal(true);
       }
@@ -52,36 +80,38 @@ export default function DashboardPage() {
     checkSession();
   }, [router]);
 
-  const fetchTagihan = async (dataSiswa) => {
-    try {
-      // 1. Ambil tahun ajaran aktif
-      const { data: taData } = await supabase
-        .from('tahun_ajaran')
-        .select('*')
-        .eq('status_aktif', true)
-        .single();
+  useEffect(() => {
+    if (siswa && selectedTaId && tahunAjaranList.length > 0) {
+      fetchTagihan(siswa, selectedTaId, tahunAjaranList);
+    }
+  }, [selectedTaId, siswa, tahunAjaranList]);
 
-      if (!taData) {
+  const fetchTagihan = async (dataSiswa, taId, currentTaList) => {
+    setLoading(true);
+    try {
+      // Dapatkan data riwayat kelas untuk tahun ajaran yang dipilih
+      const riwayat = currentTaList.find(r => r.tahun_ajaran_id === taId);
+      if (!riwayat) {
         setLoading(false);
         return;
       }
 
-      // 2. Ambil nominal SPP
+      // 2. Ambil nominal SPP berdasarkan kelas siswa di tahun tersebut
       const { data: sppData } = await supabase
         .from('pengaturan_spp')
-        .select('nominal')
-        .eq('tahun_ajaran_id', taData.id)
-        .eq('tingkat_kelas', dataSiswa.kelas_id)
+        .select('nominal_spp')
+        .eq('tahun_ajaran_id', taId)
+        .eq('kelas_id', riwayat.kelas_id)
         .single();
       
-      const nominal = sppData ? sppData.nominal : 150000;
+      const nominal = sppData ? sppData.nominal_spp : 150000;
 
       // 3. Ambil riwayat pembayaran
       const { data: pembayaran } = await supabase
         .from('pembayaran_spp')
         .select('*, users(nama_lengkap)')
         .eq('siswa_id', dataSiswa.id)
-        .eq('tahun_ajaran_id', taData.id);
+        .eq('tahun_ajaran_id', taId);
 
       const bulanList = [
         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
@@ -94,7 +124,7 @@ export default function DashboardPage() {
           id: index,
           bulan_dibayar: bulan,
           nominal_dibayar: nominal,
-          tahun_ajaran_id: taData.id,
+          tahun_ajaran_id: taId,
           status_pembayaran: bayar ? bayar.status_pembayaran : 'Belum Dibayar',
           no_transaksi: bayar ? bayar.no_transaksi : null,
           kasir_nama: bayar?.users?.nama_lengkap || 'Administrator',
@@ -109,6 +139,32 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+
+  // Auto-polling untuk transaksi Pending
+  useEffect(() => {
+    const pendingTransactions = tagihan.filter(t => t.status_pembayaran === 'Pending' && t.no_transaksi);
+    let intervalId;
+
+    if (pendingTransactions.length > 0 && siswa && selectedTaId && tahunAjaranList.length > 0) {
+      intervalId = setInterval(async () => {
+        for (const t of pendingTransactions) {
+          try {
+            await fetch('/api/check-status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ no_transaksi: t.no_transaksi })
+            });
+          } catch (e) {}
+        }
+        // Selalu fetch ulang untuk memperbarui UI jika DB berubah
+        fetchTagihan(siswa, selectedTaId, tahunAjaranList);
+      }, 7000); // Polling setiap 7 detik
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [tagihan, siswa, selectedTaId, tahunAjaranList]);
 
   const buatPembayaranPending = async (t) => {
     const no_trans = 'TRX-' + new Date().getTime();
@@ -126,6 +182,7 @@ export default function DashboardPage() {
   };
 
   const handleBayar = async (t) => {
+    setProcessingId(t.id);
     try {
       const resp = await fetch('/api/payment', {
         method: 'POST',
@@ -157,24 +214,30 @@ export default function DashboardPage() {
             } else {
               await supabase.from('pembayaran_spp').update({status_pembayaran: 'Lunas'}).eq('no_transaksi', t.no_transaksi);
             }
-            fetchTagihan(siswa);
+            showToast('Pembayaran Berhasil! Tagihan Lunas.', 'success');
+            fetchTagihan(siswa, selectedTaId, tahunAjaranList);
           },
           onPending: async function(result){
             if (t.status_pembayaran === 'Belum Dibayar') {
               await buatPembayaranPending({...t, no_transaksi: result.order_id});
             }
-            fetchTagihan(siswa);
+            showToast('Menunggu pembayaran Anda. Silakan selesaikan transaksi.', 'info');
+            fetchTagihan(siswa, selectedTaId, tahunAjaranList);
           },
           onError: function(result){
-            alert("pembayaran gagal!");
+            showToast('Pembayaran gagal atau dibatalkan oleh sistem.', 'error');
+            fetchTagihan(siswa, selectedTaId, tahunAjaranList);
           },
           onClose: function(){
-            fetchTagihan(siswa);
+            showToast('Pembayaran belum diselesaikan (Ditutup).', 'info');
+            fetchTagihan(siswa, selectedTaId, tahunAjaranList);
           }
         })
       }
     } catch (e) {
-      alert('Terjadi kesalahan saat memanggil Midtrans');
+      showToast('Terjadi kesalahan saat memanggil sistem pembayaran.', 'error');
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -202,29 +265,84 @@ export default function DashboardPage() {
   const cetakKwitansi = (t) => {
     const isOnline = t.no_transaksi?.startsWith('TRX');
     const petugas = isOnline ? 'Sistem' : t.kasir_nama;
-    const caraBayar = isOnline ? 'Online (Midtrans)' : 'Langsung';
+    const caraBayar = isOnline ? 'Online' : 'Langsung';
 
     const kwitansiHTML = `
       <html><head><title>Kwitansi ${t.bulan_dibayar}</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 40px; }
-        .header { text-align: center; border-bottom: 2px solid #2d6a4f; padding-bottom: 10px; margin-bottom: 20px; color: #2d6a4f;}
-        .row { margin: 10px 0; }
-        .row strong { display: inline-block; width: 150px; }
+        body { font-family: Arial, sans-serif; padding: 40px; color: #000; }
+        .kwitansi-container { border: 3px solid #1e3a2f; padding: 3px; }
+        .kwitansi-inner { border: 1px solid #1e3a2f; padding: 30px; }
+        .header { display: flex; align-items: center; border-bottom: 2px solid #1e3a2f; padding-bottom: 15px; margin-bottom: 20px;}
+        .header img { width: 70px; height: 70px; margin-right: 20px; object-fit: contain; }
+        .header-text { text-align: center; flex: 1; }
+        .header-text h2 { margin: 0; font-size: 22px; letter-spacing: 1px; color: #000; }
+        .header-text h4 { margin: 5px 0 0 0; font-size: 16px; font-weight: normal; color: #000; }
+        .row { margin: 8px 0; font-size: 14px; display: flex;}
+        .row .col-label { width: 140px; }
+        .row .col-colon { width: 20px; }
+        .row .col-value { flex: 1; }
+        .total-box { background: #f0f0f0; padding: 10px 15px; display: inline-block; font-weight: bold; font-size: 16px; margin-top: 15px; min-width: 200px;}
+        .footer { display: flex; justify-content: space-between; margin-top: -30px; align-items: flex-end;}
+        .footer-left { flex: 1; }
+        .footer-right { text-align: center; width: 250px; font-size: 14px; }
+        .footer-note { text-align: center; font-style: italic; font-size: 12px; margin-top: 40px; }
       </style>
       </head><body>
-        <div class="header">
-          <h2>YAYASAN PENDIDIKAN AL-HIKMAH</h2>
-          <h4>Kwitansi Pembayaran SPP</h4>
+        <div class="kwitansi-container">
+          <div class="kwitansi-inner">
+            <div class="header">
+              <img src="/logo.jpeg" alt="Logo" />
+              <div class="header-text">
+                <h2>KUITANSI PEMBAYARAN SPP</h2>
+                <h4>YAYASAN PENDIDIKAN AL-HIKMAH</h4>
+              </div>
+            </div>
+
+            <div class="row" style="margin-bottom: 20px; font-weight: bold;">
+              <div class="col-label">No Transaksi</div>
+              <div class="col-colon">:</div>
+              <div class="col-value">${t.no_transaksi || '-'}</div>
+            </div>
+            
+            <div class="row">
+              <div class="col-label">Telah Terima Dari</div>
+              <div class="col-colon">:</div>
+              <div class="col-value">${siswa?.nama_siswa} (${siswa?.nis})</div>
+            </div>
+            
+            <div class="row">
+              <div class="col-label">Kelas</div>
+              <div class="col-colon">:</div>
+              <div class="col-value">${siswa?.kelas_id || '-'}</div>
+            </div>
+            
+            <div class="row">
+              <div class="col-label">Untuk Pembayaran</div>
+              <div class="col-colon">:</div>
+              <div class="col-value">SPP Bulan ${t.bulan_dibayar}</div>
+            </div>
+            
+            <div class="row">
+              <div class="col-label">Cara Bayar</div>
+              <div class="col-colon">:</div>
+              <div class="col-value">${caraBayar}</div>
+            </div>
+
+            <div class="footer">
+              <div class="footer-left">
+                 <div class="total-box">TOTAL : Rp ${t.nominal_dibayar.toLocaleString('id-ID')}</div>
+              </div>
+              <div class="footer-right">
+                <p>Jakarta, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
+                <p style="margin-bottom: 50px;">Petugas / Kasir</p>
+                <p style="font-weight: bold;">( ${petugas} )</p>
+              </div>
+            </div>
+            
+            <div class="footer-note">Terima kasih. Simpan kuitansi ini sebagai bukti pembayaran yang sah.</div>
+          </div>
         </div>
-        <div class="row"><strong>No. Transaksi:</strong> ${t.no_transaksi || '-'}</div>
-        <div class="row"><strong>Terima Dari:</strong> ${siswa?.nama_siswa} (${siswa?.nis})</div>
-        <div class="row"><strong>Pembayaran:</strong> SPP Bulan ${t.bulan_dibayar}</div>
-        <div class="row"><strong>Cara Bayar:</strong> ${caraBayar}</div>
-        <div class="row"><strong>Jumlah:</strong> Rp ${t.nominal_dibayar.toLocaleString('id-ID')}</div>
-        <div class="row"><strong>Status:</strong> LUNAS</div>
-        <br><br>
-        <p style="text-align: right">Petugas / Kasir<br><br><br>( ${petugas} )</p>
         <script>window.print();</script>
       </body></html>
     `;
@@ -245,9 +363,9 @@ export default function DashboardPage() {
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '30px 20px' }} className="animate-fade-in">
         
         {/* Header */}
-        <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', padding: '1.5rem 2.5rem' }}>
+        <div className="glass-panel dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', padding: '1.5rem 2.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)' }}>
+            <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)', flexShrink: 0 }}>
               <img src="/logo.jpeg" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <div>
@@ -255,14 +373,30 @@ export default function DashboardPage() {
               <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>NIS: {siswa.nis} | Kelas: {siswa.kelas_id || '-'}</p>
             </div>
           </div>
-          <div style={{display: 'flex', gap: '10px'}}>
+          <div className="dashboard-header-actions" style={{display: 'flex', gap: '10px'}}>
              <button onClick={() => setShowPasswordModal(true)} className="btn-secondary" style={{ padding: '10px 20px', width: 'auto' }}>Ganti Password</button>
              <button onClick={logout} className="btn-primary" style={{ background: '#e74c3c', padding: '10px 20px', width: 'auto' }}>Logout</button>
           </div>
         </div>
 
         {/* List Tagihan */}
-        <h3 style={{ marginBottom: '20px', color: 'var(--text-main)' }}>Tagihan SPP Tahun Ini</h3>
+        <div className="tagihan-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ color: 'var(--text-main)', margin: 0 }}>Tagihan SPP</h3>
+          {tahunAjaranList.length > 0 && (
+            <select 
+              className="input-field" 
+              style={{ width: 'auto', padding: '8px 15px', cursor: 'pointer' }}
+              value={selectedTaId || ''}
+              onChange={(e) => setSelectedTaId(Number(e.target.value))}
+            >
+              {tahunAjaranList.map(ta => (
+                <option key={ta.tahun_ajaran_id} value={ta.tahun_ajaran_id}>
+                  Tahun Ajaran {ta.tahun_ajaran?.nama_tahun_ajaran} {ta.tahun_ajaran?.status_aktif ? '(Aktif)' : ''}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
         
         {loading ? (
           <p>Memuat tagihan...</p>
@@ -293,11 +427,11 @@ export default function DashboardPage() {
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button 
                         className="btn-primary" 
-                        style={{ flex: 1, opacity: t.status_pembayaran === 'Pending' ? 0.5 : 1 }}
+                        style={{ flex: 1, opacity: (t.status_pembayaran === 'Pending' || processingId === t.id) ? 0.5 : 1 }}
                         onClick={() => handleBayar(t)}
-                        disabled={t.status_pembayaran === 'Pending'}
+                        disabled={t.status_pembayaran === 'Pending' || processingId === t.id}
                       >
-                        {t.status_pembayaran === 'Pending' ? 'Menunggu' : 'Bayar Sekarang'}
+                        {processingId === t.id ? 'Memproses...' : t.status_pembayaran === 'Pending' ? 'Menunggu' : 'Bayar Sekarang'}
                       </button>
 
                       {t.status_pembayaran === 'Pending' && (
@@ -305,16 +439,19 @@ export default function DashboardPage() {
                           className="btn-primary" 
                           style={{ flex: 1, background: 'var(--text-muted)' }}
                           onClick={async () => {
+                            setProcessingId('check-'+t.id);
                             await fetch('/api/check-status', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ no_transaksi: t.no_transaksi })
                             });
-                            alert('Status ditarik ulang dari server!');
-                            fetchTagihan(siswa);
+                            showToast('Status ditarik ulang dari server!');
+                            setProcessingId(null);
+                            fetchTagihan(siswa, selectedTaId, tahunAjaranList);
                           }}
+                          disabled={processingId === 'check-'+t.id}
                         >
-                          Cek Status
+                          {processingId === 'check-'+t.id ? 'Mengecek...' : 'Cek Status'}
                         </button>
                       )}
                     </div>
@@ -353,14 +490,77 @@ export default function DashboardPage() {
               {pwdMsg && <p style={{ fontSize: '0.85rem', color: pwdMsg.includes('berhasil') ? 'green' : 'red', marginBottom: '15px' }}>{pwdMsg}</p>}
               
               <div style={{ display: 'flex', gap: '10px' }}>
-                {siswa?.is_password_changed && (
-                  <button type="button" className="btn-secondary" style={{ background: '#e2e8f0', color: '#333' }} onClick={() => setShowPasswordModal(false)}>
-                    Batal
-                  </button>
-                )}
+                <button type="button" className="btn-secondary" style={{ background: '#e2e8f0', color: '#333' }} onClick={() => setShowPasswordModal(false)}>
+                  {siswa?.is_password_changed ? 'Batal' : 'Nanti Saja'}
+                </button>
                 <button type="submit" className="btn-primary">Simpan Password</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Premium Toast Notification */}
+      {toast.show && (
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 9999,
+          width: '90%',
+          maxWidth: '400px',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            color: 'var(--text-main)',
+            padding: '24px 28px',
+            borderRadius: '16px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            borderTop: `6px solid ${toast.type === 'success' ? '#2ecc71' : toast.type === 'error' ? '#e74c3c' : '#3498db'}`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+            textAlign: 'center',
+            width: '100%'
+          }} className="animate-fade-in">
+            
+            {/* Icon Circle */}
+            <div style={{
+              background: toast.type === 'success' ? 'rgba(46, 204, 113, 0.15)' : toast.type === 'error' ? 'rgba(231, 76, 60, 0.15)' : 'rgba(52, 152, 219, 0.15)',
+              color: toast.type === 'success' ? '#2ecc71' : toast.type === 'error' ? '#e74c3c' : '#3498db',
+              width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}>
+              {toast.type === 'success' && (
+                <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              )}
+              {toast.type === 'error' && (
+                <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              )}
+              {toast.type === 'info' && (
+                <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+              )}
+            </div>
+
+            {/* Message Content */}
+            <div>
+              <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.3px', marginBottom: '5px' }}>
+                {toast.type === 'success' ? 'Sukses!' : toast.type === 'error' ? 'Gagal' : 'Informasi'}
+              </p>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 400, lineHeight: 1.5 }}>
+                {toast.message}
+              </p>
+            </div>
           </div>
         </div>
       )}

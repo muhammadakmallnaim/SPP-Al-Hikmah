@@ -31,8 +31,19 @@ module.exports = function registerSiswaHandlers() {
             const cekNis = await db.get('SELECT id FROM siswa WHERE nis = $1', [nis]);
             if (cekNis) return { success: false, message: 'NIS sudah terdaftar' };
 
-            await db.run(`INSERT INTO siswa (nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`, 
+            const resInsert = await db.run(`INSERT INTO siswa (nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`, 
                           [nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status]);
+            
+            const newSiswaId = resInsert && resInsert.lastID ? resInsert.lastID : null;
+            
+            // Simpan ke riwayat_kelas jika ada kelas_id
+            if (kelas_id && newSiswaId) {
+                const activeTa = await db.get('SELECT id FROM tahun_ajaran WHERE status_aktif = true LIMIT 1');
+                if (activeTa) {
+                    await db.run('INSERT INTO riwayat_kelas (siswa_id, kelas_id, tahun_ajaran_id) VALUES ($1, $2, $3) ON CONFLICT (siswa_id, tahun_ajaran_id) DO UPDATE SET kelas_id = EXCLUDED.kelas_id', [newSiswaId, kelas_id, activeTa.id]);
+                }
+            }
+
             writeLog('Data Siswa', 'Tambah', 'Sukses', `Menambahkan siswa baru: ${nama_siswa} (NIS: ${nis})`);
             return { success: true, message: 'Siswa berhasil ditambahkan' };
         } catch (error) {
@@ -55,6 +66,14 @@ module.exports = function registerSiswaHandlers() {
 
             await db.run(`UPDATE siswa SET nis=$1, nisn=$2, nama_siswa=$3, jenis_kelamin=$4, tempat_lahir=$5, tanggal_lahir=$6, alamat=$7, nama_orang_tua=$8, no_hp_orang_tua=$9, kelas_id=$10, tahun_masuk=$11, status=$12 WHERE id=$13`, 
                           [nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status, id]);
+                          
+            if (kelas_id) {
+                const activeTa = await db.get('SELECT id FROM tahun_ajaran WHERE status_aktif = true LIMIT 1');
+                if (activeTa) {
+                    await db.run('INSERT INTO riwayat_kelas (siswa_id, kelas_id, tahun_ajaran_id) VALUES ($1, $2, $3) ON CONFLICT (siswa_id, tahun_ajaran_id) DO UPDATE SET kelas_id = EXCLUDED.kelas_id', [id, kelas_id, activeTa.id]);
+                }
+            }
+
             writeLog('Data Siswa', 'Edit', 'Sukses', `Mengubah data siswa: ${nama_siswa} (NIS: ${nis})`);
             return { success: true, message: 'Data siswa berhasil diperbarui' };
         } catch (error) {
@@ -69,12 +88,12 @@ module.exports = function registerSiswaHandlers() {
             const db = await getDB();
             
             // Cek riwayat pembayaran
-            const cekBayar = await db.get('SELECT id FROM pembayaran_spp WHERE siswa_id = ? LIMIT 1', [id]);
+            const cekBayar = await db.get('SELECT id FROM pembayaran_spp WHERE siswa_id = $1 LIMIT 1', [id]);
             if (cekBayar) return { success: false, message: 'Siswa tidak bisa dihapus karena memiliki riwayat pembayaran' };
 
-            await db.run('DELETE FROM siswa WHERE id = ?', [id]);
+            await db.run('DELETE FROM riwayat_kelas WHERE siswa_id = $1', [id]);
+            await db.run('DELETE FROM siswa WHERE id = $1', [id]);
             writeLog('Data Siswa', 'Hapus', 'Sukses', `Menghapus ID siswa: ${id}`);
-            writeLog('Data Siswa', 'Hapus', 'Sukses', 'Berhasil menghapus data siswa');
             return { success: true, message: 'Siswa berhasil dihapus' };
         } catch (error) {
             console.error(error);
@@ -82,6 +101,34 @@ module.exports = function registerSiswaHandlers() {
             return { success: false, message: 'Gagal menghapus siswa' };
         }
     });
+
+    ipcMain.handle('promote-siswa', async (event, data) => {
+        try {
+            const db = await getDB();
+            const { siswa_ids, target_kelas_id } = data;
+            
+            const activeTa = await db.get('SELECT id FROM tahun_ajaran WHERE status_aktif = true LIMIT 1');
+            if (!activeTa) return { success: false, message: 'Tidak ada Tahun Ajaran yang aktif.' };
+
+            let count = 0;
+            for (const s_id of siswa_ids) {
+                // Update kelas di tabel siswa
+                await db.run('UPDATE siswa SET kelas_id = $1 WHERE id = $2', [target_kelas_id, s_id]);
+                // Insert/Update di riwayat_kelas
+                await db.run('INSERT INTO riwayat_kelas (siswa_id, kelas_id, tahun_ajaran_id) VALUES ($1, $2, $3) ON CONFLICT (siswa_id, tahun_ajaran_id) DO UPDATE SET kelas_id = EXCLUDED.kelas_id', [s_id, target_kelas_id, activeTa.id]);
+                count++;
+            }
+            
+            writeLog('Kenaikan Kelas', 'Proses', 'Sukses', `Berhasil menaikkan kelas ${count} siswa ke kelas ID ${target_kelas_id}.`);
+            return { success: true, message: `Berhasil menaikkan kelas ${count} siswa.` };
+        } catch (error) {
+            console.error(error);
+            writeLog('Kenaikan Kelas', 'Proses', 'Gagal', `Error: ${error.message}`);
+            return { success: false, message: 'Gagal memproses kenaikan kelas.' };
+        }
+    });
+
+
 
     ipcMain.handle('import-siswa', async (event, fileData) => {
         try {
@@ -141,6 +188,14 @@ module.exports = function registerSiswaHandlers() {
                         // Jika sudah ada, update kelas (jika diisi) dan update status
                         const updateKelasId = kelas_id !== null ? kelas_id : existingSiswa.kelas_id;
                         await db.run('UPDATE siswa SET kelas_id = ?, status = ? WHERE id = ?', [updateKelasId, status_akhir, existingSiswa.id]);
+                        
+                        if (updateKelasId) {
+                            const activeTa = await db.get('SELECT id FROM tahun_ajaran WHERE status_aktif = true LIMIT 1');
+                            if (activeTa) {
+                                await db.run('INSERT INTO riwayat_kelas (siswa_id, kelas_id, tahun_ajaran_id) VALUES ($1, $2, $3) ON CONFLICT (siswa_id, tahun_ajaran_id) DO UPDATE SET kelas_id = EXCLUDED.kelas_id', [existingSiswa.id, updateKelasId, activeTa.id]);
+                            }
+                        }
+
                         countUpdate++;
                         
                         if (existingSiswa.nis === nis && existingSiswa.nama_siswa !== nama) {
@@ -150,8 +205,17 @@ module.exports = function registerSiswaHandlers() {
                         }
                     } else {
                         // Jika belum ada, masukkan sebagai siswa baru lengkap dengan data detailnya
-                        await db.run(`INSERT INTO siswa (nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+                        const resInsert = await db.run(`INSERT INTO siswa (nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`, 
                             [nis, nisn, nama, jk, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status_akhir]);
+                        
+                        const newSiswaId = resInsert && resInsert.lastID ? resInsert.lastID : null;
+                        if (kelas_id && newSiswaId) {
+                            const activeTa = await db.get('SELECT id FROM tahun_ajaran WHERE status_aktif = true LIMIT 1');
+                            if (activeTa) {
+                                await db.run('INSERT INTO riwayat_kelas (siswa_id, kelas_id, tahun_ajaran_id) VALUES ($1, $2, $3) ON CONFLICT (siswa_id, tahun_ajaran_id) DO UPDATE SET kelas_id = EXCLUDED.kelas_id', [newSiswaId, kelas_id, activeTa.id]);
+                            }
+                        }
+                        
                         countBerhasil++;
                         detailLog.push(`[BARU] ${nama} (${nis}) berhasil diinput.`);
                     }
