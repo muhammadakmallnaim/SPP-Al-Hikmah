@@ -16,8 +16,7 @@
       "buildResources": "build"
     },
     "win": {
-      "target": "nsis",
-      "icon": "src/assets/images/Logo_Aplikasi.ico"
+      "target": "nsis"
     },
     "nsis": {
       "oneClick": false,
