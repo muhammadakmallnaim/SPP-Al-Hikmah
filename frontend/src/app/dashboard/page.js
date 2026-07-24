@@ -334,7 +334,7 @@ export default function DashboardPage() {
                  <div class="total-box">TOTAL : Rp ${t.nominal_dibayar.toLocaleString('id-ID')}</div>
               </div>
               <div class="footer-right">
-                <p>Jakarta, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
+                <p>Tanjung Pura, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
                 <p style="margin-bottom: 50px;">Petugas / Kasir</p>
                 <p style="font-weight: bold;">( ${petugas} )</p>
               </div>

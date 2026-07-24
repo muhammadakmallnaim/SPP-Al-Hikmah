@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tglStr = new Date().toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'});
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
-        doc.text(`Jakarta, ${tglStr}`, 150, 48);
+        doc.text(`Tanjung Pura, ${tglStr}`, 150, 48);
         doc.text(`Petugas / Kasir`, 150, 54);
         
         doc.setFont("helvetica", "bold");
