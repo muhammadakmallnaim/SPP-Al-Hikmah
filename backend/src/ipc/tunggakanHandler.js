@@ -31,6 +31,28 @@ module.exports = function registerTunggakanHandlers() {
 
             const siswaList = await db.all(querySiswa, params);
             
+            if (siswaList.length === 0) return { success: true, data: [] };
+            
+            const siswaIds = siswaList.map(s => s.id);
+            const placeholders = siswaIds.map(() => '?').join(',');
+
+            // Bulk fetch data riwayat, pengaturan, dan pembayaran
+            const allRiwayat = await db.all(`
+                SELECT r.siswa_id, r.kelas_id, r.tahun_ajaran_id, ta.nama_tahun_ajaran, ta.status_aktif as ta_aktif
+                FROM riwayat_kelas r
+                JOIN tahun_ajaran ta ON r.tahun_ajaran_id = ta.id
+                WHERE r.siswa_id IN (${placeholders})
+                ORDER BY ta.nama_tahun_ajaran ASC
+            `, siswaIds);
+
+            const allPengaturanSpp = await db.all(`SELECT * FROM pengaturan_spp`);
+
+            const allPembayaran = await db.all(`
+                SELECT siswa_id, tahun_ajaran_id, bulan_dibayar 
+                FROM pembayaran_spp
+                WHERE status_pembayaran = 'Lunas' AND siswa_id IN (${placeholders})
+            `, siswaIds);
+
             // Hitung tunggakan untuk tiap siswa
             const hasilTunggakan = [];
             const currentDate = new Date();
@@ -46,31 +68,15 @@ module.exports = function registerTunggakanHandlers() {
             const currentSchoolMonthIdx = mapBulanSekolah[currentMonthIdx];
 
             for (const siswa of siswaList) {
-                const riwayat = await db.all(`
-                    SELECT r.kelas_id, r.tahun_ajaran_id, ta.nama_tahun_ajaran, ta.status_aktif as ta_aktif
-                    FROM riwayat_kelas r
-                    JOIN tahun_ajaran ta ON r.tahun_ajaran_id = ta.id
-                    WHERE r.siswa_id = ?
-                    ORDER BY ta.nama_tahun_ajaran ASC
-                `, [siswa.id]);
-
+                const riwayat = allRiwayat.filter(r => r.siswa_id === siswa.id);
                 let totalTunggakan = 0;
                 const rincianPerSemester = [];
 
                 for (const r of riwayat) {
-                    const pengaturanSpp = await db.get(`
-                        SELECT nominal_spp, jatuh_tempo_tanggal
-                        FROM pengaturan_spp
-                        WHERE kelas_id = ? AND tahun_ajaran_id = ?
-                    `, [r.kelas_id, r.tahun_ajaran_id]);
-
+                    const pengaturanSpp = allPengaturanSpp.find(p => p.kelas_id === r.kelas_id && p.tahun_ajaran_id === r.tahun_ajaran_id);
                     if (!pengaturanSpp) continue;
                     
-                    const pembayaran = await db.all(`
-                        SELECT bulan_dibayar FROM pembayaran_spp
-                        WHERE siswa_id = ? AND tahun_ajaran_id = ? AND status_pembayaran = 'Lunas'
-                    `, [siswa.id, r.tahun_ajaran_id]);
-                    
+                    const pembayaran = allPembayaran.filter(p => p.siswa_id === siswa.id && p.tahun_ajaran_id === r.tahun_ajaran_id);
                     const lunasBulan = pembayaran.map(p => p.bulan_dibayar);
                     
                     let tunggakanGanjil = 0;
