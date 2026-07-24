@@ -20,7 +20,7 @@ module.exports = function registerPembayaranHandlers() {
                 params.push(kelas_id);
             }
             if (keyword) {
-                query += ` AND (s.nis LIKE ? OR s.nama_siswa LIKE ?)`;
+                query += ` AND (s.nis ILIKE ? OR s.nama_siswa ILIKE ?)`;
                 params.push(`%${keyword}%`, `%${keyword}%`);
             }
 

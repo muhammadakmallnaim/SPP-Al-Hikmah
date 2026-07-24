@@ -24,7 +24,7 @@ module.exports = function registerTunggakanHandlers() {
                 params.push(kelas_id);
             }
             if (keyword) {
-                querySiswa += ` AND (s.nis LIKE ? OR s.nama_siswa LIKE ?)`;
+                querySiswa += ` AND (s.nis ILIKE ? OR s.nama_siswa ILIKE ?)`;
                 params.push(`%${keyword}%`, `%${keyword}%`);
             }
             querySiswa += ` ORDER BY s.nama_siswa ASC`;

@@ -321,29 +321,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         showToast('Sedang membuat PDF, mohon tunggu...', 'info');
         
-        let htmlContent = `
-            <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff;">
-                <h2 style="text-align: center; margin-bottom: 20px;">Kartu Login Siswa</h2>
-                <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
-        `;
+        let htmlContent = `<div style="font-family: Arial, sans-serif; background: #fff;">`;
         
-        siswaArray.forEach(s => {
-            const username = s.username || s.nisn || s.nis;
-            const pwd = s.password ? (s.is_password_changed ? '******** (Sudah diganti)' : s.password) : 'Belum di-generate';
+        for (let i = 0; i < siswaArray.length; i += 6) {
+            const chunk = siswaArray.slice(i, i + 6);
             htmlContent += `
-                <div style="width: 320px; border: 2px solid #2d6a4f; border-radius: 8px; padding: 15px; background: #f8fdfa; text-align: center; box-sizing: border-box; page-break-inside: avoid; margin-bottom: 10px;">
-                    <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #2d6a4f; border-bottom: 2px dashed #ccc; padding-bottom: 5px;">Portal SPP Al-Hikmah</h3>
-                    <div style="font-weight: bold; font-size: 16px; margin: 10px 0;">${s.nama_siswa}</div>
-                    <div style="font-size: 13px; color: #555;">NIS: ${s.nis}</div>
-                    <div style="text-align: left; font-size: 14px; margin-top: 10px; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                        <div><span style="display: inline-block; width: 85px; font-weight: bold;">Username</span>: ${username}</div>
-                        <div><span style="display: inline-block; width: 85px; font-weight: bold;">Password</span>: <strong>${pwd}</strong></div>
-                    </div>
-                    <div style="margin-top: 12px; font-size: 11px; color: #666;">Simpan kartu ini dan jangan beritahukan password Anda kepada orang lain.</div>
-                </div>
+                <div style="padding: 20px; page-break-after: always;">
+                    <h2 style="text-align: center; margin-bottom: 20px;">Kartu Login Siswa</h2>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 750px; margin: 0 auto;">
             `;
-        });
-        htmlContent += `</div></div>`;
+            
+            chunk.forEach(s => {
+                const username = s.username || s.nisn || s.nis;
+                const pwd = s.password ? (s.is_password_changed ? '******** (Sudah diganti)' : s.password) : 'Belum di-generate';
+                htmlContent += `
+                    <div style="border: 2px solid #2d6a4f; border-radius: 8px; padding: 15px; background: #f8fdfa; text-align: center; box-sizing: border-box; page-break-inside: avoid; height: 250px;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #2d6a4f; border-bottom: 2px dashed #ccc; padding-bottom: 5px;">Portal SPP Al-Hikmah</h3>
+                        <div style="font-weight: bold; font-size: 16px; margin: 10px 0;">${s.nama_siswa}</div>
+                        <div style="font-size: 13px; color: #555;">NIS: ${s.nis}</div>
+                        <div style="text-align: left; font-size: 14px; margin-top: 10px; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <div><span style="display: inline-block; width: 85px; font-weight: bold;">Username</span>: ${username}</div>
+                            <div><span style="display: inline-block; width: 85px; font-weight: bold;">Password</span>: <strong>${pwd}</strong></div>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 11px; color: #666;">Simpan kartu ini dengan aman.</div>
+                    </div>
+                `;
+            });
+            htmlContent += `</div></div>`;
+        }
+        htmlContent += `</div>`;
 
         const opt = {
             margin:       0.5,

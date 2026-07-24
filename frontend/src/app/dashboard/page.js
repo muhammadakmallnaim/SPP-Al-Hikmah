@@ -58,7 +58,8 @@ export default function DashboardPage() {
         .select(`
           tahun_ajaran_id,
           kelas_id,
-          tahun_ajaran ( id, nama_tahun_ajaran, status_aktif )
+          tahun_ajaran ( id, nama_tahun_ajaran, status_aktif ),
+          kelas ( nama_kelas )
         `)
         .eq('siswa_id', dataSiswa.id)
         .order('tahun_ajaran_id', { ascending: false });
@@ -370,7 +371,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', marginBottom: '5px' }}>Hai, {siswa.nama_siswa}!</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>NIS: {siswa.nis} | Kelas: {siswa.kelas_id || '-'}</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>NIS: {siswa.nis} | Kelas: {tahunAjaranList.find(r => r.tahun_ajaran_id === selectedTaId)?.kelas?.nama_kelas || '-'}</p>
             </div>
           </div>
           <div className="dashboard-header-actions" style={{display: 'flex', gap: '10px'}}>

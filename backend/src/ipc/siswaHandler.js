@@ -171,7 +171,7 @@ module.exports = function registerSiswaHandlers() {
                     // Cari ID Kelas berdasarkan namanya
                     let kelas_id = null;
                     if (nama_kelas) {
-                        const kls = await db.get('SELECT id FROM kelas WHERE nama_kelas = ? COLLATE NOCASE', [nama_kelas]);
+                        const kls = await db.get('SELECT id FROM kelas WHERE nama_kelas ILIKE ?', [nama_kelas]);
                         if (kls) kelas_id = kls.id;
                     }
 
@@ -187,7 +187,8 @@ module.exports = function registerSiswaHandlers() {
                     if (existingSiswa) {
                         // Jika sudah ada, update kelas (jika diisi) dan update status
                         const updateKelasId = kelas_id !== null ? kelas_id : existingSiswa.kelas_id;
-                        await db.run('UPDATE siswa SET kelas_id = ?, status = ? WHERE id = ?', [updateKelasId, status_akhir, existingSiswa.id]);
+                        await db.run('UPDATE siswa SET nama_siswa = $1, jenis_kelamin = $2, tempat_lahir = $3, tanggal_lahir = $4, alamat = $5, nama_orang_tua = $6, no_hp_orang_tua = $7, kelas_id = $8, status = $9 WHERE id = $10', 
+                            [nama, jk, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, updateKelasId, status_akhir, existingSiswa.id]);
                         
                         if (updateKelasId) {
                             const activeTa = await db.get('SELECT id FROM tahun_ajaran WHERE status_aktif = true LIMIT 1');
