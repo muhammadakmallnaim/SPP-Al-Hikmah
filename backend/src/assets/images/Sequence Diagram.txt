@@ -1,0 +1,37 @@
+@startuml
+autonumber
+skinparam ParticipantBackgroundColor #F0F0FF
+skinparam ParticipantBorderColor #A0A0FF
+skinparam SequenceLifeLineBorderColor #A0A0FF
+skinparam SequenceArrowColor #555555
+
+actor "Admin / Kasir" as Kasir
+participant "Tampilan (HTML/JS)" as UI
+participant "Jembatan IPC (preload.js)" as IPC
+participant "Backend Controller" as Backend
+participant "Database PostgreSQL" as DB
+
+Kasir -> UI : Ketik NIS / Nama Siswa & Klik "Cari"
+UI -> IPC : window.api.getDataTunggakan(keyword)
+IPC -> Backend : ipcMain.handle('get-data-tunggakan')
+
+Backend -> DB : Bulk Query (Siswa, Pengaturan SPP, Pembayaran)
+DB --> Backend : Return Data Mentah
+Backend -> Backend : Kalkulasi Tagihan & Tunggakan
+Backend --> IPC : JSON { success: true, data: hasilTunggakan }
+IPC --> UI : Render UI Tabel Daftar Tagihan Siswa
+
+Kasir -> UI : Klik "Bayar" di bulan tagihan tertentu
+UI -> IPC : window.api.bayarSpp({siswa_id, bulan})
+IPC -> Backend : ipcMain.handle('bayar-spp')
+
+Backend -> DB : INSERT INTO pembayaran_spp (status='Lunas')
+DB --> Backend : Eksekusi Berhasil (Generate No Transaksi)
+Backend --> IPC : JSON { success: true, no_transaksi }
+IPC --> UI : Update UI (Status Bulan menjadi Lunas)
+UI -> Kasir : Tampilkan Alert Sukses & Muncul Struk Kuitansi
+
+Kasir -> UI : Klik "Cetak Kuitansi"
+UI -> UI : Generate HTML menjadi format PDF
+UI --> Kasir : Muncul Jendela Print OS (Print/Save PDF)
+@enduml

@@ -1,0 +1,51 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #F0F0FF
+  BorderColor #A0A0FF
+}
+skinparam actor {
+  BackgroundColor #F0F0FF
+  BorderColor #A0A0FF
+}
+skinparam rectangle {
+  BackgroundColor #FFFFE0
+  BorderColor #CCCCA0
+}
+
+actor "Siswa" as Siswa
+actor "Admin / Bendahara" as Admin
+actor "Kepala Sekolah" as Kepsek
+
+rectangle "Aplikasi SPP Al-Hikmah" {
+  usecase "Login Aplikasi" as UC1
+  usecase "Lihat Tagihan & Riwayat Bayar" as UC7
+  usecase "Ganti Password Akun" as UC8
+  usecase "Kelola Master Data (Siswa, Kelas, TA)" as UC2
+  usecase "Atur Nominal & Jatuh Tempo SPP" as UC3
+  usecase "Proses Pembayaran SPP & Tagihan" as UC4
+  usecase "Cetak Kuitansi Transaksi" as UC4a
+  usecase "Monitoring Tunggakan Siswa" as UC6
+  usecase "Cetak Surat Tunggakan" as UC6a
+  usecase "Generate & Ekspor Laporan Keuangan" as UC5
+}
+
+' Relasi disusun berurutan agar garis tidak melilit
+Siswa --> UC1
+Siswa --> UC7
+Siswa --> UC8
+
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC6
+Admin --> UC5
+
+Kepsek --> UC1
+Kepsek --> UC5
+
+UC4 .> UC4a : << opsi >>
+UC6 .> UC6a : << otomatis >>
+@enduml

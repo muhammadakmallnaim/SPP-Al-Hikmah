@@ -1,0 +1,44 @@
+1. Penjelasan Use Case Diagram
+Diagram ini memetakan hak akses (aktor) dan fitur-fitur apa saja yang bisa mereka gunakan di dalam sistem.
+
+Di sistem SPP kita, terdapat 3 Aktor Utama:
+
+Admin / Bendahara (Aktor dengan hak akses paling tinggi)
+Login Aplikasi: Masuk ke dalam sistem (Backend/Electron).
+Kelola Master Data: Menambah, mengedit, atau menghapus data Siswa, Kelas, dan Tahun Ajaran.
+Atur Nominal & Jatuh Tempo: Menentukan besaran tagihan SPP per kelas beserta tanggal batas bayarnya.
+Proses Pembayaran: Melakukan pencarian data siswa dan mengeksekusi pelunasan tagihan SPP.
+Cetak Kuitansi & Surat Tunggakan: Fitur mencetak bukti sah pembayaran (otomatis setelah bayar) dan surat peringatan untuk siswa yang menunggak (opsional).
+Monitoring & Laporan: Melihat data tunggakan secara real-time dan mencetak laporan keuangan.
+Siswa (Aktor dari sisi Frontend/Website)
+Login Aplikasi: Masuk menggunakan NIS dan Password (portal Next.js).
+Lihat Tagihan & Riwayat: Melihat daftar bulan apa saja yang belum dan sudah lunas secara mandiri.
+Ganti Password: Mengubah kata sandi demi keamanan akun.
+Kepala Sekolah (Aktor Eksekutif)
+Hanya memiliki akses untuk Login dan Melihat/Mengekspor Laporan Keuangan untuk kebutuhan pantauan.
+
+
+2. Penjelasan Sequence Diagram
+Diagram ini khusus membedah fitur Kalkulasi & Pembayaran SPP.
+
+Komponen yang berinteraksi: Kasir ➔ Tampilan (UI) ➔ Jalur IPC (Electron) ➔ Backend ➔ Database (PostgreSQL).
+
+Alur Detailnya:
+
+Fase Pencarian (Bulk Query): Kasir mengetik NIS. UI mengirim perintah lewat IPC ke Backend. Di sinilah letak optimasi sistem kita; Backend melakukan Bulk Query ke Database untuk menarik data Siswa, Riwayat Kelas, Pengaturan SPP, dan Pembayaran secara bersamaan. Backend lalu menghitung tagihan secara mandiri dan mengembalikannya ke UI untuk ditampilkan.
+Fase Pembayaran: Kasir menekan tombol "Bayar". Sistem UI mengirim perintah kembali ke Backend. Backend mengeksekusi perintah INSERT INTO ke tabel pembayaran_spp di PostgreSQL dan mengamankan status menjadi 'Lunas' sekaligus membuat Nomor Transaksi unik.
+Fase Cetak: Setelah sukses, UI akan mengubah tampilan bulan tersebut menjadi "Lunas". Kasir bisa langsung menekan tombol cetak, lalu UI akan mengkonversi tampilan HTML setruk menjadi format PDF siap cetak.
+
+
+
+3. Penjelasan Activity Diagram
+Diagram ini membedah alur logika menu Pengelolaan Data Siswa.
+
+Alur Detailnya:
+
+Setelah Admin masuk ke menu "Data Siswa", sistem menampilkan seluruh tabel data siswa.
+Admin dihadapkan pada sebuah partisi percabangan aksi:
+Cabang Hapus: Jika admin menghapus siswa, sistem tidak langsung menghapus. Sistem akan mengecek relasi database terlebih dahulu. Jika siswa tersebut sudah pernah melakukan pembayaran SPP (ada histori), sistem akan menolak penghapusan (demi keamanan laporan keuangan). Jika belum pernah bayar sama sekali, data baru diizinkan untuk dihapus.
+Cabang Tambah/Edit: Sistem akan memvalidasi form. Jika ada kolom wajib yang kosong atau NIS sudah dipakai orang lain, sistem akan menolak (Stop) dan memunculkan pesan error. Jika aman, data disimpan ke database.
+Cabang Import Excel (Fitur Cerdas): Admin mengupload file .xlsx. Sistem mem-parsing data per baris. Logikanya sangat rapi: Jika Nama & NIS sudah ada di database, sistem akan meng-update datanya dan menaikkan kelasnya. Jika belum ada, sistem akan mendaftarkannya sebagai siswa baru (INSERT).
+Jika salah satu dari tiga aksi di atas berhasil melewati validasi, alur akan menyatu kembali ke tahap akhir: Mencatat ke sistem Log Aktivitas, me-refresh tampilan UI tabel, dan proses selesai.

@@ -1,0 +1,55 @@
+@startuml
+skinparam ActivityBackgroundColor #F0F0FF
+skinparam ActivityBorderColor #A0A0FF
+skinparam ArrowColor #333333
+skinparam PartitionBorderColor #A0A0FF
+
+start
+:Admin Login & Buka Menu "Data Siswa";
+:Sistem Menampilkan Daftar Siswa;
+
+partition "Pengelolaan Siswa" {
+  if (Pilih Aksi?) then (Hapus Siswa)
+    :Klik Tombol Hapus & Konfirmasi;
+    if (Konfirmasi?) then (Ya, Lanjut Hapus)
+      :Sistem Cek Relasi Pembayaran;
+      if (Relasi Data?) then (Aman: Belum bayar SPP)
+        :DELETE dari Database PostgreSQL;
+      else (Gagal: Sudah punya histori)
+        :Tampilkan Error "Gagal Dihapus";
+        stop
+      endif
+    else (Batal)
+      stop
+    endif
+
+  else if (Aksi Lain?) then (Tambah/Edit)
+    :Isi Form Data (NIS, Nama, dll);
+    if (Validasi Input?) then (Data Lengkap & NIS Unik)
+      :INSERT / UPDATE Database;
+    else (Data Kosong / NIS Kembar)
+      :Tampilkan Pesan Error;
+      stop
+    endif
+
+  else (Import Excel)
+    :Pilih File Excel (.xlsx);
+    if (Cek Format File?) then (Valid & Kolom Sesuai)
+      :Parsing Data Excel ke Bentuk JSON;
+      :Looping per baris data siswa;
+      if (Siswa Sudah Ada?) then (Ya)
+        :UPDATE Semua Biodata & Naik Kelas;
+      else (Belum)
+        :INSERT Data Siswa Baru;
+      endif
+    else (Format / Kolom Salah)
+      :Tampilkan Notifikasi Error;
+      stop
+    endif
+  endif
+}
+
+:Catat Log Aktivitas di Sistem;
+:Refresh UI Tabel Data Siswa;
+stop
+@enduml
