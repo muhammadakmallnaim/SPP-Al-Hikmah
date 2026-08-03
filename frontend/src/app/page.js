@@ -69,7 +69,7 @@ export default function LoginPage() {
           <input
             type="text"
             className="input-field"
-            placeholder="Username (NISN/NIS)"
+            placeholder="Masukkan username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
