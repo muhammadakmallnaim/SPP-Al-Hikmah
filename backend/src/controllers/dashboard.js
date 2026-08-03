@@ -67,10 +67,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                     },
                     options: {
                         responsive: true,
-                        scales: { y: { beginAtZero: true } },
+                        maintainAspectRatio: false,
+                        scales: { 
+                            y: { 
+                                beginAtZero: true,
+                                ticks: {
+                                    maxTicksLimit: 6,
+                                    callback: function(value) {
+                                        if (value >= 1000000) {
+                                            return 'Rp ' + (value / 1000000) + ' Jt';
+                                        } else if (value >= 1000) {
+                                            return 'Rp ' + (value / 1000) + 'k';
+                                        }
+                                        return 'Rp ' + value;
+                                    }
+                                }
+                            } 
+                        },
                         plugins: { legend: { display: false } }
                     }
                 });
+                // Memaksa tinggi canvas agar tidak terlalu panjang
+                document.getElementById('chartPenerimaan').style.height = '280px';
             }
         }
     } catch (err) {
