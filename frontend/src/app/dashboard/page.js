@@ -194,7 +194,9 @@ export default function DashboardPage() {
           pembayaran_id: String(t.id),
           bulan: t.bulan_dibayar,
           siswa_nama: siswa.nama_siswa,
-          siswa_nis: siswa.nis
+          siswa_nis: siswa.nis,
+          siswa_id: siswa.id,
+          tahun_ajaran_id: t.tahun_ajaran_id
         })
       });
       const data = await resp.json();
