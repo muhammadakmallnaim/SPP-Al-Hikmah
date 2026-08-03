@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         scales: { 
                             y: { 
                                 beginAtZero: true,
+                                suggestedMax: 500000, // Minimal 500k agar stepnya masuk akal
                                 ticks: {
                                     maxTicksLimit: 6,
                                     callback: function(value) {
@@ -87,8 +88,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         plugins: { legend: { display: false } }
                     }
                 });
-                // Memaksa tinggi canvas agar tidak terlalu panjang
-                document.getElementById('chartPenerimaan').style.height = '280px';
             }
         }
     } catch (err) {

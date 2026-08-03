@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Authorization logic
     if (user.role === 'kepala_sekolah') {
         const restrictedMenus = [
-            'dashboard.html',
             'data-siswa.html',
             'data-kelas.html',
             'tahun-ajaran.html',
