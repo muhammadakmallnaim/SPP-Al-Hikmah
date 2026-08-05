@@ -1,7 +1,7 @@
 1. Penjelasan Use Case Diagram
 Diagram ini memetakan hak akses (aktor) dan fitur-fitur apa saja yang bisa mereka gunakan di dalam sistem.
 
-Di sistem SPP kita, terdapat 3 Aktor Utama:
+Di sistem SPP ini, terdapat 3 Aktor Utama:
 
 Admin / Bendahara (Aktor dengan hak akses paling tinggi)
 Login Aplikasi: Masuk ke dalam sistem (Backend/Electron).
