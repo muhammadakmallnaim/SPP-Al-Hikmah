@@ -63,9 +63,12 @@ async function runTests() {
     const db = await getDB();
 
     // -- INIT CLEANUP SEBELUM TEST --
+    await db.run("DELETE FROM pembayaran_spp WHERE siswa_id IN (SELECT id FROM siswa WHERE nis LIKE 'TEST_%')");
+    await db.run("DELETE FROM pengaturan_spp WHERE tahun_ajaran_id IN (SELECT id FROM tahun_ajaran WHERE nama_tahun_ajaran LIKE 'TEST_%')");
+    await db.run("DELETE FROM riwayat_kelas WHERE siswa_id IN (SELECT id FROM siswa WHERE nis LIKE 'TEST_%')");
+    await db.run("DELETE FROM siswa WHERE nis LIKE 'TEST_%'");
     await db.run("DELETE FROM kelas WHERE nama_kelas LIKE 'TEST_%'");
     await db.run("DELETE FROM tahun_ajaran WHERE nama_tahun_ajaran LIKE 'TEST_%'");
-    await db.run("DELETE FROM siswa WHERE nis LIKE 'TEST_%'");
 
     // === MODUL KELAS ===
     let kelasId;
@@ -102,6 +105,16 @@ async function runTests() {
         const thn = res.data.find(t => t.nama_tahun_ajaran === 'TEST_2099/2100');
         assert.ok(thn);
         tahunId = thn.id;
+    });
+
+    await test("Modul Pengaturan SPP: Bisa Atur Nominal SPP", async () => {
+        const res = await handlers['add-pengaturan-spp'](null, {
+            kelas_id: kelasId,
+            tahun_ajaran_id: tahunId,
+            nominal_spp: 50000,
+            jatuh_tempo_tanggal: 10
+        });
+        assert.strictEqual(res.success, true);
     });
 
     // === MODUL SISWA ===
@@ -150,6 +163,41 @@ async function runTests() {
         assert.strictEqual(res.success, true);
     });
 
+    // === MODUL PEMBAYARAN & TUNGGAKAN ===
+    await test("Modul Pembayaran: Bisa Memproses Tagihan Bebas / Pindahan", async () => {
+        const res = await handlers['proses-pembayaran'](null, {
+            siswa_id: siswaId,
+            tahun_ajaran_id: tahunId,
+            bulan_dibayar: 'Juli',
+            nominal_dibayar: 0,
+            status_pembayaran: 'Bebas',
+            kasir_id: 1
+        });
+        assert.strictEqual(res.success, true);
+    });
+
+    await test("Modul Pembayaran: Bisa Memproses Tagihan Normal (Lunas)", async () => {
+        const res = await handlers['proses-pembayaran'](null, {
+            siswa_id: siswaId,
+            tahun_ajaran_id: tahunId,
+            bulan_dibayar: 'Agustus',
+            nominal_dibayar: 50000,
+            status_pembayaran: 'Lunas',
+            kasir_id: 1
+        });
+        assert.strictEqual(res.success, true);
+    });
+
+    await test("Modul Tunggakan & Tagihan: Status Bebas Dihitung Selesai (Tidak Nunggak)", async () => {
+        const res = await handlers['cari-tagihan-siswa'](null, 'TEST_999999');
+        assert.strictEqual(res.success, true);
+        const tagihan = res.data.tagihan;
+        const juli = tagihan.find(t => t.bulan === 'Juli');
+        const agustus = tagihan.find(t => t.bulan === 'Agustus');
+        assert.strictEqual(juli.status, 'Bebas');
+        assert.strictEqual(agustus.status, 'Lunas');
+    });
+
     // === MODUL LAINNYA ===
     await test("Modul Dashboard: Bisa Tarik Data Statistik", async () => {
         const res = await handlers['get-dashboard-stats']();
@@ -168,6 +216,13 @@ async function runTests() {
     });
 
     // === CLEANUP TEST DATA ===
+    await test("Sistem Keamanan: Hapus Data Uji Coba (Pembayaran)", async () => {
+        const { getDB } = require('../main/database/db');
+        const db = await getDB();
+        await db.run("DELETE FROM pembayaran_spp WHERE siswa_id IN (SELECT id FROM siswa WHERE nis LIKE 'TEST_%')");
+        await db.run("DELETE FROM pengaturan_spp WHERE tahun_ajaran_id IN (SELECT id FROM tahun_ajaran WHERE nama_tahun_ajaran LIKE 'TEST_%')");
+        assert.ok(true);
+    });
     await test("Sistem Keamanan: Hapus Data Uji Coba (Siswa)", async () => {
         const res = await handlers['delete-siswa'](null, siswaId);
         assert.strictEqual(res.success, true);
