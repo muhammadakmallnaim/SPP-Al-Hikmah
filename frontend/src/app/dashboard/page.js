@@ -297,7 +297,7 @@ export default function DashboardPage() {
             <div class="header">
               <img src="/logo.jpeg" alt="Logo" />
               <div class="header-text">
-                <h2>KUITANSI PEMBAYARAN SPP</h2>
+                <h2>${t.status_pembayaran === 'Bebas' ? 'KUITANSI (BEBAS / PINDAHAN)' : 'KUITANSI PEMBAYARAN SPP'}</h2>
                 <h4>YAYASAN PENDIDIKAN AL-HIKMAH</h4>
               </div>
             </div>
@@ -321,9 +321,9 @@ export default function DashboardPage() {
             </div>
             
             <div class="row">
-              <div class="col-label">Untuk Pembayaran</div>
+              <div class="col-label">Keterangan</div>
               <div class="col-colon">:</div>
-              <div class="col-value">SPP Bulan ${t.bulan_dibayar}</div>
+              <div class="col-value">${t.status_pembayaran === 'Bebas' ? `Bebas Tagihan (Pindahan) Bulan ${t.bulan_dibayar}` : `SPP Bulan ${t.bulan_dibayar}`}</div>
             </div>
             
             <div class="row">
@@ -334,7 +334,7 @@ export default function DashboardPage() {
 
             <div class="footer">
               <div class="footer-left">
-                 <div class="total-box">TOTAL : Rp ${t.nominal_dibayar.toLocaleString('id-ID')}</div>
+                 <div class="total-box">TOTAL : Rp ${t.status_pembayaran === 'Bebas' ? '0' : t.nominal_dibayar.toLocaleString('id-ID')}</div>
               </div>
               <div class="footer-right">
                 <p>Tanjung Pura, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
@@ -409,23 +409,31 @@ export default function DashboardPage() {
               <div key={t.id} className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
                   <h4 style={{ fontSize: '1.1rem', margin: 0 }}>{t.bulan_dibayar}</h4>
-                  <span className={`status-badge ${t.status_pembayaran === 'Lunas' ? 'status-lunas' : t.status_pembayaran === 'Pending' ? 'status-pending' : 'status-belum'}`}>
-                    {t.status_pembayaran}
+                  <span className={`status-badge ${t.status_pembayaran === 'Lunas' ? 'status-lunas' : t.status_pembayaran === 'Bebas' ? 'bg-secondary text-white' : t.status_pembayaran === 'Pending' ? 'status-pending' : 'status-belum'}`}>
+                    {t.status_pembayaran === 'Bebas' ? 'Pindahan / Bebas' : t.status_pembayaran}
                   </span>
                 </div>
                 
                 <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '20px' }}>
-                  Rp {t.nominal_dibayar.toLocaleString('id-ID')}
+                  Rp {t.status_pembayaran === 'Bebas' ? '0' : t.nominal_dibayar.toLocaleString('id-ID')}
                 </p>
 
                 <div style={{ marginTop: 'auto' }}>
-                  {t.status_pembayaran === 'Lunas' ? (
-                    <button 
-                      className="btn-secondary"
-                      onClick={() => cetakKwitansi(t)}
-                    >
-                      Cetak Kwitansi
-                    </button>
+                  {(t.status_pembayaran === 'Lunas' || t.status_pembayaran === 'Bebas') ? (
+                    <div>
+                      {t.status_pembayaran === 'Bebas' && (
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '10px', fontStyle: 'italic' }}>
+                          Status: Bebas / Mutasi Pindahan
+                        </p>
+                      )}
+                      <button 
+                        className="btn-secondary"
+                        onClick={() => cetakKwitansi(t)}
+                        style={{ width: '100%' }}
+                      >
+                        Cetak Kwitansi
+                      </button>
+                    </div>
                   ) : (
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button 
