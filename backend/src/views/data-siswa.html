@@ -60,19 +60,33 @@
             <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm flex-wrap gap-3">
                 <h3 class="m-0 font-weight-bold">Data Siswa</h3>
                 <div class="d-flex gap-2 flex-wrap">
-                    <select class="form-select" id="filterKelas" style="max-width: 200px;">
-                        <option value="">Semua Kelas</option>
-                    </select>
-                    <div class="input-group" style="max-width: 250px;">
-                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" class="form-control" id="inputSearch" placeholder="Cari NIS / Nama...">
-                    </div>
                     <button class="btn btn-info text-white text-nowrap" id="btnKenaikanKelas"><i class="fas fa-level-up-alt me-1"></i> Naik Kelas</button>
                     <button class="btn btn-warning text-nowrap" id="btnGenerateAkun"><i class="fas fa-key me-1"></i> Generate Akun</button>
                     <button class="btn btn-success text-nowrap" id="btnImportModal"><i class="fas fa-file-excel me-1"></i> Import</button>
                     <button class="btn btn-primary text-nowrap" id="btnTambahSiswa"><i class="fas fa-plus me-1"></i> Tambah</button>
                 </div>
             </div>
+            
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Pilih Kelas</label>
+                            <select class="form-select" id="filterKelas">
+                                <option value="">Semua Kelas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Cari Nama / NIS</label>
+                            <input type="text" class="form-control" id="inputSearch" placeholder="Masukkan Nama atau NIS">
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-primary w-100" id="btnCariData"><i class="fas fa-search"></i> Cari Data</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card shadow-sm border-0">
                 <div class="card-body p-0 table-responsive">
                     <table class="table table-hover mb-0">

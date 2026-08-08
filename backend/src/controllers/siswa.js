@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     inputSearch.addEventListener('input', applyFilters);
     document.getElementById('filterKelas').addEventListener('change', applyFilters);
+    
+    const btnCari = document.getElementById('btnCariData');
+    if(btnCari) btnCari.addEventListener('click', applyFilters);
 
     function renderTable(data) {
         if (data.length === 0) {
