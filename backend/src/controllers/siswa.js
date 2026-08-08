@@ -19,9 +19,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (res.success) {
             allKelas = res.data;
             const selectKelas = document.getElementById('inputKelas');
+            const filterKelas = document.getElementById('filterKelas');
             selectKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+            filterKelas.innerHTML = '<option value="">Semua Kelas</option>';
             allKelas.forEach(k => {
                 selectKelas.innerHTML += `<option value="${k.id}">${k.nama_kelas}</option>`;
+                filterKelas.innerHTML += `<option value="${k.id}">${k.nama_kelas}</option>`;
             });
         }
     }
@@ -40,15 +43,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    inputSearch.addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allSiswa.filter(s => 
-            (s.nama_siswa && s.nama_siswa.toLowerCase().includes(term)) ||
-            (s.nis && s.nis.toLowerCase().includes(term)) ||
-            (s.nama_kelas && s.nama_kelas.toLowerCase().includes(term))
-        );
+    function applyFilters() {
+        const term = inputSearch.value.toLowerCase();
+        const kelasFilter = document.getElementById('filterKelas').value;
+        
+        const filtered = allSiswa.filter(s => {
+            const matchTerm = (s.nama_siswa && s.nama_siswa.toLowerCase().includes(term)) ||
+                              (s.nis && s.nis.toLowerCase().includes(term));
+            const matchKelas = kelasFilter === "" || (s.kelas_id && s.kelas_id.toString() === kelasFilter);
+            return matchTerm && matchKelas;
+        });
         renderTable(filtered);
-    });
+    }
+
+    inputSearch.addEventListener('input', applyFilters);
+    document.getElementById('filterKelas').addEventListener('change', applyFilters);
 
     function renderTable(data) {
         if (data.length === 0) {
@@ -57,11 +66,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         let html = '';
-        data.forEach((item) => {
+        data.forEach((item, index) => {
             let statusBadge = item.status === 'aktif' ? '<span class="badge bg-success">Aktif</span>' : `<span class="badge bg-secondary">${item.status}</span>`;
             html += `
                 <tr>
-                    <td class="px-4 py-3">${item.nis}</td>
+                    <td class="px-4 py-3">${index + 1}</td>
+                    <td class="py-3">${item.nis}</td>
                     <td class="py-3 fw-bold">${item.nama_siswa}</td>
                     <td class="py-3">${item.nama_kelas || '-'}</td>
                     <td class="py-3">${item.tahun_masuk}</td>
