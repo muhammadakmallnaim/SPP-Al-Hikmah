@@ -112,6 +112,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <td class="px-3 py-2">${item.nama_siswa}</td>
                     <td class="px-3 py-2">${item.nama_kelas}</td>
                     <td class="px-3 py-2">${item.bulan_dibayar}</td>
+                    <td class="px-3 py-2">
+                        ${item.status_pembayaran === 'Bebas' ? '<span class="badge bg-secondary">Pindahan/Bebas</span>' : '<span class="badge bg-success">Lunas</span>'}
+                    </td>
                     <td class="px-3 py-2 text-end">Rp ${item.nominal_dibayar.toLocaleString('id-ID')}</td>
                     <td class="px-3 py-2">${item.kasir}</td>
                 </tr>
@@ -136,6 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             'Nama Siswa': item.nama_siswa,
             'Kelas': item.nama_kelas,
             'Bulan Tagihan': item.bulan_dibayar,
+            'Keterangan': item.status_pembayaran === 'Bebas' ? 'Pindahan/Bebas' : 'Lunas',
             'Nominal (Rp)': item.nominal_dibayar,
             'Petugas': item.kasir
         }));
@@ -175,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         doc.setFont("helvetica", "normal");
         doc.text('Laporan Penerimaan SPP', 32, 23);
         
-        const tableColumn = ["No", "No Transaksi", "Tanggal", "NIS", "Nama", "Kelas", "Bulan", "Nominal (Rp)", "Petugas"];
+        const tableColumn = ["No", "No Transaksi", "Tanggal", "NIS", "Nama", "Kelas", "Bulan", "Keterangan", "Nominal (Rp)", "Petugas"];
         const tableRows = [];
 
         let total = 0;
@@ -188,6 +192,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 item.nama_siswa,
                 item.nama_kelas,
                 item.bulan_dibayar,
+                item.status_pembayaran === 'Bebas' ? 'Pindahan/Bebas' : 'Lunas',
                 item.nominal_dibayar.toLocaleString('id-ID'),
                 item.kasir
             ];
@@ -195,7 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             total += item.nominal_dibayar;
         });
 
-        tableRows.push(["", "", "", "", "", "", "TOTAL", total.toLocaleString('id-ID'), ""]);
+        tableRows.push(["", "", "", "", "", "", "", "TOTAL", total.toLocaleString('id-ID'), ""]);
 
         doc.autoTable({
             head: [tableColumn],

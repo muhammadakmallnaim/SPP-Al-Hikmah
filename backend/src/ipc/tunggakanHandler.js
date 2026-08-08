@@ -50,7 +50,7 @@ module.exports = function registerTunggakanHandlers() {
             const allPembayaran = await db.all(`
                 SELECT siswa_id, tahun_ajaran_id, bulan_dibayar 
                 FROM pembayaran_spp
-                WHERE status_pembayaran = 'Lunas' AND siswa_id IN (${placeholders})
+                WHERE status_pembayaran IN ('Lunas', 'Bebas') AND siswa_id IN (${placeholders})
             `, siswaIds);
 
             // Hitung tunggakan untuk tiap siswa

@@ -69,20 +69,20 @@ module.exports = function registerPembayaranHandlers() {
             const pembayaran = await db.all(`
                 SELECT bulan_dibayar, status_pembayaran, no_transaksi 
                 FROM pembayaran_spp 
-                WHERE siswa_id = ? AND tahun_ajaran_id = ? AND status_pembayaran = 'Lunas'
+                WHERE siswa_id = ? AND tahun_ajaran_id = ? AND status_pembayaran IN ('Lunas', 'Bebas')
             `, [siswa.siswa_id, pengaturanSpp.tahun_ajaran_id]);
 
-            const lunasMap = {};
+            const bayarMap = {};
             pembayaran.forEach(p => {
-                lunasMap[p.bulan_dibayar] = p.no_transaksi;
+                bayarMap[p.bulan_dibayar] = p;
             });
 
             // Tentukan status tiap bulan
             const tagihan = bulanList.map(bulan => ({
                 bulan: bulan,
                 nominal: pengaturanSpp.nominal_spp,
-                status: lunasMap[bulan] ? 'Lunas' : 'Belum Dibayar',
-                no_transaksi: lunasMap[bulan] || null
+                status: bayarMap[bulan] ? bayarMap[bulan].status_pembayaran : 'Belum Dibayar',
+                no_transaksi: bayarMap[bulan] ? bayarMap[bulan].no_transaksi : null
             }));
 
             return { 
@@ -102,18 +102,18 @@ module.exports = function registerPembayaranHandlers() {
     });
 
     // 2. Proses Pembayaran
-    ipcMain.handle('proses-pembayaran', async (event, { siswa_id, tahun_ajaran_id, bulan_dibayar, nominal_dibayar, kasir_id }) => {
+    ipcMain.handle('proses-pembayaran', async (event, { siswa_id, tahun_ajaran_id, bulan_dibayar, nominal_dibayar, status_pembayaran = 'Lunas', kasir_id }) => {
         try {
             const db = await getDB();
             
-            // Cek apakah bulan tersebut sudah dibayar
+            // Cek apakah bulan tersebut sudah dibayar atau bebas
             const cekLunas = await db.get(`
-                SELECT id FROM pembayaran_spp 
-                WHERE siswa_id = ? AND tahun_ajaran_id = ? AND bulan_dibayar = ? AND status_pembayaran = 'Lunas'
+                SELECT id, status_pembayaran FROM pembayaran_spp 
+                WHERE siswa_id = ? AND tahun_ajaran_id = ? AND bulan_dibayar = ? AND status_pembayaran IN ('Lunas', 'Bebas')
             `, [siswa_id, tahun_ajaran_id, bulan_dibayar]);
 
             if (cekLunas) {
-                return { success: false, message: `Bulan ${bulan_dibayar} sudah lunas.` };
+                return { success: false, message: `Bulan ${bulan_dibayar} sudah berstatus ${cekLunas.status_pembayaran}.` };
             }
 
             // Generate No Transaksi (Format: SPP-YYYYMMDD-Random)
@@ -125,8 +125,8 @@ module.exports = function registerPembayaranHandlers() {
             // Insert ke database
             const stmt = await db.run(`
                 INSERT INTO pembayaran_spp (no_transaksi, siswa_id, tahun_ajaran_id, bulan_dibayar, tanggal_pembayaran, nominal_dibayar, status_pembayaran, kasir_id)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'Lunas', ?)
-            `, [no_transaksi, siswa_id, tahun_ajaran_id, bulan_dibayar, nominal_dibayar, kasir_id]);
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?)
+            `, [no_transaksi, siswa_id, tahun_ajaran_id, bulan_dibayar, nominal_dibayar, status_pembayaran, kasir_id]);
 
             writeLog('Pembayaran', 'Bayar Tagihan', 'Sukses', 'Berhasil memproses pembayaran SPP siswa');
             return { success: true, message: 'Pembayaran berhasil diproses!', no_transaksi: no_transaksi };

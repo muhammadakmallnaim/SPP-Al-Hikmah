@@ -121,10 +121,22 @@ document.addEventListener('DOMContentLoaded', () => {
         containerTagihan.innerHTML = '';
         data.tagihan.forEach(item => {
             const isLunas = item.status === 'Lunas';
-            const cardClass = isLunas ? 'lunas' : 'belum';
-            const icon = isLunas ? '<i class="fas fa-check-circle text-success fs-3 mb-2"></i>' : '<i class="fas fa-file-invoice-dollar text-primary fs-3 mb-2"></i>';
-            const badge = isLunas ? '<span class="status-badge bg-success text-white mb-2 d-inline-block">Lunas</span>' : '<span class="status-badge bg-warning text-dark mb-2 d-inline-block">Belum Dibayar</span>';
-            const extraBtn = isLunas ? `<button class="btn btn-sm btn-outline-success w-100 mt-2 btn-cetak" data-trx="${item.no_transaksi}" data-bln="${item.bulan}"><i class="fas fa-download"></i> Kuitansi</button>` : '';
+            const isBebas = item.status === 'Bebas';
+            const isSelesai = isLunas || isBebas; // Keduanya dianggap selesai tagihannya
+
+            let cardClass = 'belum';
+            if (isLunas) cardClass = 'lunas';
+            else if (isBebas) cardClass = 'bg-light text-muted border-secondary';
+
+            let icon = '<i class="fas fa-file-invoice-dollar text-primary fs-3 mb-2"></i>';
+            if (isLunas) icon = '<i class="fas fa-check-circle text-success fs-3 mb-2"></i>';
+            else if (isBebas) icon = '<i class="fas fa-gift text-secondary fs-3 mb-2"></i>';
+
+            let badge = '<span class="status-badge bg-warning text-dark mb-2 d-inline-block">Belum Dibayar</span>';
+            if (isLunas) badge = '<span class="status-badge bg-success text-white mb-2 d-inline-block">Lunas</span>';
+            else if (isBebas) badge = '<span class="status-badge bg-secondary text-white mb-2 d-inline-block">Pindahan / Bebas</span>';
+
+            const extraBtn = isSelesai ? `<button class="btn btn-sm btn-outline-success w-100 mt-2 btn-cetak" data-trx="${item.no_transaksi}" data-bln="${item.bulan}" data-status="${item.status}"><i class="fas fa-download"></i> Kuitansi</button>` : '';
             
             const col = document.createElement('div');
             col.className = 'col-md-3 col-sm-4 col-6';
@@ -138,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
 
-            if (!isLunas) {
+            if (!isSelesai) {
                 col.querySelector('.month-card').addEventListener('click', (ev) => {
                     if(!ev.target.closest('.btn-cetak')) {
                         bukaModalBayar(item.bulan);
@@ -149,7 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ev.stopPropagation();
                     const noTrx = ev.target.closest('.btn-cetak').getAttribute('data-trx');
                     const bln = ev.target.closest('.btn-cetak').getAttribute('data-bln');
-                    cetakStruk(noTrx, bln, currentNominal);
+                    const stat = ev.target.closest('.btn-cetak').getAttribute('data-status');
+                    cetakStruk(noTrx, bln, currentNominal, stat);
                 });
             }
 
@@ -209,7 +222,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function cetakStruk(noTransaksi, bulan, nominal) {
+    document.getElementById('btnProsesBebas').addEventListener('click', async () => {
+        const btn = document.getElementById('btnProsesBebas');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Memproses...';
+        document.getElementById('modalError').classList.add('d-none');
+
+        const payload = {
+            siswa_id: currentSiswa.siswa_id,
+            tahun_ajaran_id: currentTAId,
+            bulan_dibayar: selectedBulan,
+            nominal_dibayar: 0,
+            status_pembayaran: 'Bebas',
+            kasir_id: user.id
+        };
+
+        try {
+            const response = await window.api.prosesPembayaran(payload);
+            if (response.success) {
+                modalBayar.hide();
+                loadTagihanSiswa(currentSiswa.nis);
+                showToast(`Status bulan ${selectedBulan} berhasil diubah menjadi Bebas/Pindahan`, 'success');
+            } else {
+                document.getElementById('modalError').textContent = response.message;
+                document.getElementById('modalError').classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById('modalError').textContent = 'Terjadi kesalahan jaringan atau server.';
+            document.getElementById('modalError').classList.remove('d-none');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-gift me-1"></i> Bebaskan';
+        }
+    });
+
+    function cetakStruk(noTransaksi, bulan, nominal, status = 'Lunas') {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({
             orientation: 'landscape',
@@ -239,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         doc.setFontSize(16);
         doc.setFont("helvetica", "bold");
-        doc.text('KUITANSI PEMBAYARAN SPP', 105, 15, { align: 'center' });
+        doc.text(status === 'Bebas' ? 'KUITANSI (BEBAS / PINDAHAN)' : 'KUITANSI PEMBAYARAN SPP', 105, 15, { align: 'center' });
         doc.setFontSize(12);
         doc.setFont("helvetica", "normal");
         doc.text('YAYASAN PENDIDIKAN AL-HIKMAH', 105, 22, { align: 'center' });
@@ -264,8 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const petugas = isOnline ? 'Sistem' : user.nama_lengkap;
         const caraBayar = isOnline ? 'Online' : 'Langsung';
 
-        doc.text(`Untuk Pembayaran`, 12, 64);
-        doc.text(`: SPP Bulan ${bulan}`, 45, 64);
+        doc.text(`Keterangan`, 12, 64);
+        doc.text(status === 'Bebas' ? `: Bebas Tagihan (Pindahan/Beasiswa) Bulan ${bulan}` : `: SPP Bulan ${bulan}`, 45, 64);
 
         doc.text(`Cara Bayar`, 12, 72);
         doc.text(`: ${caraBayar}`, 45, 72);
@@ -275,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.rect(12, 76, 80, 12, 'F');
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
-        doc.text(`TOTAL : Rp ${nominal.toLocaleString('id-ID')}`, 15, 84);
+        doc.text(`TOTAL : Rp ${status === 'Bebas' ? '0' : nominal.toLocaleString('id-ID')}`, 15, 84);
 
         // Kolom Kanan (Tanda Tangan)
         const tglStr = new Date().toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'});

@@ -11,6 +11,7 @@ module.exports = function registerLaporanHandlers() {
                     p.bulan_dibayar, 
                     p.tanggal_pembayaran, 
                     p.nominal_dibayar, 
+                    p.status_pembayaran,
                     s.nis, 
                     s.nama_siswa, 
                     k.nama_kelas,
@@ -19,7 +20,7 @@ module.exports = function registerLaporanHandlers() {
                 JOIN siswa s ON p.siswa_id = s.id
                 JOIN kelas k ON s.kelas_id = k.id
                 JOIN users u ON p.kasir_id = u.id
-                WHERE p.status_pembayaran = 'Lunas'
+                WHERE p.status_pembayaran IN ('Lunas', 'Bebas')
             `;
             let params = [];
 

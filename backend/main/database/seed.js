@@ -26,7 +26,7 @@ async function seedData() {
     await db.run('INSERT INTO users (username, password, nama_lengkap, role) VALUES (?, ?, ?, ?)', ['admin', hashAdmin, 'Administrator', 'admin']);
     console.log('User admin berhasil dibuat (username: admin, password: admin123).');
 
-    await db.run('INSERT INTO users (username, password, nama_lengkap, role) VALUES (?, ?, ?, ?)', ['kepsek', hashKepsek, 'Bpk. Kepala Sekolah', 'kepala_sekolah']);
+    await db.run('INSERT INTO users (username, password, nama_lengkap, role) VALUES (?, ?, ?, ?)', ['kepsek', hashKepsek, 'Bpk. MUHAMMAD RIFKI ASRA, S.E', 'kepala_sekolah']);
     console.log('User kepala sekolah berhasil dibuat (username: kepsek, password: kepsek123).');
 
     // 2. Seed Tahun Ajaran
@@ -34,28 +34,28 @@ async function seedData() {
     console.log('Tahun ajaran berhasil dibuat.');
 
     // 3. Seed Kelas (Tingkat 10, 11, 12)
-    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['X-TKJ', 10, 'Budi']);
-    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['XI-TKJ', 11, 'Aminah']);
-    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['XII-TKJ', 12, 'Ahmad']);
-    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['X-TKR', 10, 'Santoso']);
-    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['XI-TKR', 11, 'Siti']);
-    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['XII-TKR', 12, 'Dahlan']);
+    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['X-TKJ', 10, 'NURHALIJA, S.Pd']);
+    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['XI-TKJ', 11, 'ENEK CITRA FERI, M. Pd']);
+    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['XII-TKJ', 12, 'LISA NOPIANTY, S.Pd']);
+    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['X-TBSM', 10, 'NURHALIJA, S.Pd']);
+    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['XI-TBSM', 11, 'SUCI EMILIA, S. Pd']);
+    await db.run('INSERT INTO kelas (nama_kelas, tingkat, wali_kelas) VALUES (?, ?, ?)', ['XII-TBSM', 12, 'LISA NOPIANTY, S.Pd']);
     console.log('3 Kelas (10, 11, 12) berhasil dibuat.');
 
     // 4. Seed Siswa (Langkat: Stabat, Gebang, Tanjung Pura)
     const querySiswa = `INSERT INTO siswa (nis, nisn, nama_siswa, jenis_kelamin, tempat_lahir, tanggal_lahir, alamat, nama_orang_tua, no_hp_orang_tua, kelas_id, tahun_masuk, status, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     // Password default disamakan dengan NIS
     await db.run(querySiswa, ['2025001', '0012345671', 'Andi Rahman', 'L', 'Stabat', '2008-05-10', 'Jl. Sudirman No 1', 'Bapak Rahman', '081234567890', 1, 2025, 'aktif', '2025001']);
-    console.log('3 Siswa dari daerah Kab. Langkat berhasil dibuat.');
+    console.log('1 Siswa dari daerah Kab. Langkat berhasil dibuat.');
 
     // 5. Seed Pengaturan SPP (75.000, 85.000, 90.000 jatuh tempo tgl 5)
     const querySPP = 'INSERT INTO pengaturan_spp (tahun_ajaran_id, kelas_id, nominal_spp, jatuh_tempo_tanggal) VALUES (?, ?, ?, ?)';
     await db.run(querySPP, [1, 1, 50000, 5]); // Kelas X TKJ
     await db.run(querySPP, [1, 2, 50000, 5]); // Kelas XI TKJ
     await db.run(querySPP, [1, 3, 50000, 5]); // Kelas XII TKJ
-    await db.run(querySPP, [1, 4, 50000, 5]); // Kelas X TKR
-    await db.run(querySPP, [1, 5, 50000, 5]); // Kelas XI TKR
-    await db.run(querySPP, [1, 6, 50000, 5]); // Kelas XII TKR
+    await db.run(querySPP, [1, 4, 50000, 5]); // Kelas X TBSM
+    await db.run(querySPP, [1, 5, 50000, 5]); // Kelas XI TBSM
+    await db.run(querySPP, [1, 6, 50000, 5]); // Kelas XII TBSM
     console.log('Pengaturan SPP berhasil dibuat.');
 
     // 6. Buat Riwayat Kelas agar tagihan bisa di-generate sistem
